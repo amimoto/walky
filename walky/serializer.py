@@ -56,6 +56,10 @@ class Serializer(object):
         """ Normalize a structure. Turn it into the structure
             format expected for serialization.
         """
+
+        if isinstance(denormalized_struct,NormalizedData):
+            return denormalized_struct.data
+
         if type(denormalized_struct) in PRIMITIVE_TYPES:
             return [PAYLOAD_PRIMITIVE, denormalized_struct]
 
@@ -132,7 +136,7 @@ class Serializer(object):
                 data[k] = self.struct_denormalize(v)
             return data
 
-class ServiceSerializer(object):
+class ServiceSerializer(Serializer):
     """ This class is used by the server to encode data into
         a useful format.
     """

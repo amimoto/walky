@@ -1,1 +1,1 @@
-import objects
+from walky.objects.common import *

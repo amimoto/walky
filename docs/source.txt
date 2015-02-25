@@ -1,0 +1,19 @@
+
+Walky the character from Kirby is the basis of this codename:
+
+http://kirby.wikia.com/wiki/Walky
+
+"... By the time Kirby finishes singing and forfeits his ability (just like in the games), he has destroyed all of Castle Dedede. In the end, Kirby wants to sing again, but Walky, who apparently survived the inhalation, has had enough and runs away.
+
+Walky has no attack of his own and simply acts like a regular microphone. As Customer Service explains to Dedede, Walky is a monster who simply amplifies the voice of the person talking into it."""
+
+
+WalkyObject
+WalkyCommon
+
+
+WalkyServer
+WalkyClient
+
+
+

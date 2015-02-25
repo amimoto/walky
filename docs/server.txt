@@ -1,0 +1,20 @@
+The system should be running on what ports?
+
+8661 and 8662 which are currently unassigned according to IANA
+
+8661 for SSL Socket access
+8662 for SSL Websocket
+
+https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.txt
+
+8616-8664            Unassigned
+
+However, there are other ports, Private/Dynamic Port Numbers
+
+49,152 to 65,535
+
+These ports are neither reserved nor maintained by IANA. They can be used for any purpose without registration, so they are appropriate for a private protocol used only by a particular organization
+
+Opted to use the class of ports in the "Registered (User) Port Numbers" range since I'd like to keep it standard.
+
+

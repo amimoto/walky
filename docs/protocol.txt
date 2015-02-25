@@ -1,0 +1,209 @@
+Base exchange unit is in Line-Delimited JSON.
+
+Basically, it's JSON with linebreaks taken out except for the end of the object.
+
+It makes it quite easy to reframe if something gets corrupted.
+
+Design objectives:
+
+* Terse
+* Easy to parse
+* Fast to implement
+
+=== Base Principles ===
+
+Under the hood the system is just another RPC system.
+
+The main difference is the method that procedures are called.
+
+The client software uses IDs similar to object addresses.
+
+Then, when a class method is to be invoked, the client will pass the server the object ID, the name of the object method to be called and arguments.
+
+The server then retrieves the object based upon the ID and invokes the appropriate method.
+
+The result of the method is then encoded and returned to the client.
+
+At the protocol is stateful and networks can wreak havoc on stability, there are also mechanisms to restore state for a period of time.
+
+=== Response Messages ===
+
+[ PayloadType:Integer, Payload:Object, MessageID:String ]
+
+PayloadType values:
+
+< 0: Error conditions
+0..9: Frequently used messages
+>= 10: System related
+
+Primitive: 0
+> Payload can be used directly without any additional processing
+
+Contains Distributed Object: 1
+> Payload CONTAINS distributed objects, further processing required
+
+Distributed Object: 2
+> Payload IS a distributed object, further processing required
+> Expanded, the structure would look like:
+> [2,ObjectID:Integer]
+> There is an optional payload that can be provided for metadata
+> [2,ObjectID:Integer,Payload:Object]
+
+Object Deleted: 8
+> Returned as confirmation that an object has been freed
+> from the server's memory.
+
+Object Method: 9
+> Special return code for attribute query telling the requestor that the 
+> result is an object method.
+> No payload is required or provided in this case.
+
+Event: 11
+> Payload has information related to an subscribed event. Payload to be treated like a Distributed Object
+
+System: 12
+> Payload has system related information. Payload to be treated like a Distributed Object
+
+Error: -1
+> Payload has system related information. Payload to be treated like a Distributed Object
+
+Error: -XXX
+> System can also use HTTP error status codes (excepting the 200/300 series)
+
+Note that the structure can be nested.
+
+For instance, take the example of a list of objects. Expanded
+
+[
+  1,
+  [
+    [2,'1234'],
+    [2,'1235']
+  ]
+]
+
+And for a dict:
+
+[
+  1,
+  {
+    'key1': [2,'1234'],
+    'key2': [2,'1235']
+  }
+]
+
+MessageID:String is just a unique string representation for the string. 
+
+This makes it much easier for async requests to receive the response associated with them.
+
+If MessageIDs are not being used, the value is not present.
+
+=== Request Messages ===
+
+There are two modes:
+
+[ ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
+
+ObjectID: string identifying the object holding the function to execute
+Function: string name of the function to call
+MessageID: a string value that uniquely identifies the request. Useful for async libraries.
+args: (optional) array of normalized positional values to pass to the class method
+kwargs: (optional) dict of normalized values to pass to the class method
+
+Note that args and kwargs may contain distributed objects. The the arguments must be encoded the same as payload format used for responses.
+
+=== Special Objects ===
+
+There are a few objects that are always present.
+
+They have been given special ObjectIDs that are easily recognizable.
+
+They are:
+
+"?": Inspection
+"=": Attribute Setting
+"-": Deletion
+
+==== Interrogation Object ====
+
+This is a core object. It's purpose is to yield metadata associated with
+registered objects in the system.
+
+[ "?", "dir", [ 0, "ObjectID:HexString" ], MessageID:String ]
+
+Returns a list of all the attributes of the object.
+
+MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
+
+This effectively is like calling 'dir'.
+
+The server's response should be:
+
+[ 0, [ attr1, ..., attrn ], MessageID:String(if any) ]
+
+[ "?", "ObjectID:HexString.Attribute:String" ]
+
+We're requesting information on the attribute.
+
+If the attribute is data structure, the system will return a standard response.
+
+If the attribute is an object method, then the system will return a message code like:
+
+[ 9 ]
+
+==== Attribute Setting Object ====
+
+This is a core object. It's purpose is to set attributes associated with 
+regisered objects in the system.
+
+[ "=", "ObjectID:HexString.Attribute:String", PayLoad:Object, MessageID:String ]
+
+This will set the object's attribute to a particular value.
+
+MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
+
+This can potentially be a dangerous ability so it's controlled by a set of permissions.
+
+==== Deletion Object ====
+
+Also a core object. This lives as a way to help the garbage collector know when
+an object no longer must be stored in memory.
+
+[ "-", 'ObjectID:HexString', MessageID:String ]
+
+Removes the object from the reference, effectively "free" the resource.
+
+MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
+
+You will not be able to use this record again.
+
+The server's response should be:
+
+[ 8, MessageID:String(if any) ]
+
+==== State Management ====
+
+Networks are not necessarily stable, anything from a temporary hiccup to hitting refresh during a websock connection can cause disruption.
+
+To allow the reconnection from a broken state, a method of restoring state is provided.
+
+[ "@", Function:String ]
+
+===== Functions =====
+
+@.resumeable( Seconds:Integer )
+
+Request the current session to be retained for up to Seconds:Integer seconds.
+
+If successful, the server's response should be:
+
+[ 0, SessionKey:String, MessageID:String(if any) ]
+
+SessionKey is a unique identifier that allows the user to resume to a session
+
+In some cases no sessionkey may be available, such as when the user is not logged in or the port is in unrecoverable error state.
+
+@.resume( SessionKey:String )
+
+
+

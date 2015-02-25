@@ -31,25 +31,34 @@ PRIMITIVE_TYPES = (
               types.BooleanType
             )
 
-class JSONDOException(Exception): 
+class WalkyException(Exception): 
       error_code = httplib.INTERNAL_SERVER_ERROR
 
-class InvalidObjectID(JSONDOException):
+class InvalidServiceID(WalkyException):
       error_code = httplib.INTERNAL_SERVER_ERROR
 
-class InvalidObject(JSONDOException):
+class InvalidPortID(WalkyException):
       error_code = httplib.INTERNAL_SERVER_ERROR
 
-class InvalidObjectMethod(JSONDOException):
+class InvalidObjectID(WalkyException):
+      error_code = httplib.INTERNAL_SERVER_ERROR
+
+class InvalidObject(WalkyException):
+      error_code = httplib.INTERNAL_SERVER_ERROR
+
+class InvalidObjectMethod(WalkyException):
       error_code = httplib.METHOD_NOT_ALLOWED
 
-class InvalidStruct(JSONDOException):
+class InvalidRequest(WalkyException):
       error_code = httplib.BAD_REQUEST
 
-class InvalidDictKeyType(JSONDOException):
+class InvalidStruct(WalkyException):
+      error_code = httplib.BAD_REQUEST
+
+class InvalidDictKeyType(WalkyException):
       error_code = httplib.UNSUPPORTED_MEDIA_TYPE
 
-class Forbidden(JSONDOException):
+class Forbidden(WalkyException):
       error_code = httplib.FORBIDDEN
 
 

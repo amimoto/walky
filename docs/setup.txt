@@ -1,0 +1,59 @@
+"""
+Installing zerp_jsondo is a bit more complex than a normal addon.
+
+The base install is fine, however, SQL level access to Read-Only and the Sanitized versions rely on your configuring postgres.
+
+In Postgres, two additional accounts must be created.
+
+1. Read-Only Sanitized
+2. Read-Write Sanitized
+
+By "Sanitized" it means the Postgres user must be configured to prevent access to things such as the "res_users" table through anything but a crafted view.
+
+This can be done via a superuser:
+
+Ensure that the following is invoked on each and every database:
+
+Note that you can run python on this file and get the appropriate SQL 
+
+"""
+
+OPENERPDATABASE = "DBNAME"
+OPENERPDATABASE = "2015-02-01_143818"
+PASSWORD = "pass"
+
+print """
+
+CREATE ROLE rosafe LOGIN PASSWORD '{PASSWORD}';
+CREATE ROLE rwsafe LOGIN PASSWORD '{PASSWORD}';
+
+-- From within database
+REVOKE ALL PRIVILEGES ON database "{OPENERPDATABASE}" from public;
+REVOKE ALL PRIVILEGES ON database "{OPENERPDATABASE}" from rosafe;
+REVOKE ALL PRIVILEGES ON database "{OPENERPDATABASE}" from rwsafe;
+REVOKE ALL PRIVILEGES ON SCHEMA public from rosafe;
+REVOKE ALL PRIVILEGES ON SCHEMA public from rwsafe;
+REVOKE ALL PRIVILEGES ON SCHEMA public from public;
+
+-- Existing objects
+GRANT CONNECT ON DATABASE "{OPENERPDATABASE}" TO rosafe;
+GRANT CONNECT ON DATABASE "{OPENERPDATABASE}" TO rwsafe;
+
+GRANT USAGE ON SCHEMA public TO rosafe;
+GRANT USAGE ON SCHEMA public TO rwsafe;
+
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO rosafe;
+GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public TO rwsafe;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO rosafe;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO rwsafe;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO public;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON SEQUENCES TO public;
+
+-- To prevent users from accessing particular tables such as res_users, do:
+
+REVOKE ALL ON res_users FROM readonly_sanitized;
+REVOKE ALL ON res_users FROM readwrite_sanitized;
+
+""".format(OPENERPDATABASE=OPENERPDATABASE,PASSWORD=PASSWORD)
+

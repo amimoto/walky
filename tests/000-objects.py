@@ -1,4 +1,6 @@
-import walky.objects.common as c
+#!/usr/bin/python
+
+import walky.objects.common as common
 
 class TestClass(object):
     def a(self):
@@ -7,10 +9,11 @@ class TestClass(object):
     _c = None
 
 tc = TestClass()
-ow = c.ObjectWrapper(tc,allow=['.*'])
+ow = common.ObjectWrapper(tc,allow=['.*'])
 print ow.b
 print ow.a
 print ow.a()
 print dir(ow)
+ow._c
 
 

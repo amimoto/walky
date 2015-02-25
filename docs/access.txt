@@ -1,0 +1,37 @@
+The following access levels apply:
+
+* Arbitrary code execution
+* Change effective user
+* CRUD SQL
+* CRUD (sanitized) SQL
+* CRUD ORM
+* Read-only (sanitized) SQL 
+* Read-only orm
+
+
+Make it a matrix of abilities:
+
+* SQL: RO Safe, RW Safe, RO Raw, RW Raw (can create multiple permission sets)
+* ORM: RO, RW
+* SUID
+* Code Exec
+
+* Netservices?
+
+
+
+== Object Permissions ==
+
+Security is controlled via ACLs on objects and their permissions.
+
+By default no object or its attributes are allowed to be accessed.
+
+Allowing the usage of an object requires two things:
+
+# Permission to access the object
+# Permission to access the object's attributes
+
+
+
+
+

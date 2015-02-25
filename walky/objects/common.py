@@ -1,8 +1,9 @@
-from constants import *
-from utils import *
 import types
 import re
 import weakref
+
+from walky.constants import *
+from walky.utils import *
 
 class ObjectWrapper(object):
     """ Helper class to wrap an object for controlling
@@ -53,6 +54,13 @@ class ObjectWrapper(object):
         if allow != None: self._allow = allow
         if deny != None: self._deny = deny
         self._init_(*args,**kwargs)
+
+    @object_method_prevent_rpc
+    def fqn(self):
+        """ Returns the fully qualified name of the module
+        """
+        obj = self._getobj_()
+        return obj.__module__+"."+obj.__class__.__name__
 
     @object_method_prevent_rpc
     def _init_(self,*args,**kwargs):
@@ -138,7 +146,7 @@ class WeakrefObjectWrapper(ObjectWrapper):
     def _setobj_(self,obj):
         """ Stores the object to be wrapped as a weakerf
         """
-        self._obj = weakref(obj)
+        self._obj = weakref.ref(obj)
 
     @object_method_prevent_rpc
     def _getobj_(self):

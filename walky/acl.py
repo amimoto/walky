@@ -1,149 +1,142 @@
+
 import re
 import types
 
-import walky.objects
+from walky.utils import *
+from walky.constants import *
 
-RULE_TYPE_CLASS = 1
-RULE_TYPE_FUNCTION = 2
-
-MODE_READ = 0x04
-MODE_WRITE = 0x02
-MODE_EXECUTE = 0x01
 
 class ACL(object):
-    """ Define a single set of ACLs for objects
+    """ Define a single ACL
     """
-    _attr_rules = None
-    _obj_rules = None
-
-    def __init__(self,*args,**kwargs):
-        self._attr_rules = []
-        self._obj_rules = []
-
-    def obj_rule(self,
-                    target_class,
-                    evaluate=None,
+    def __init__(self,
+                    group,
                     allow=None,
                     deny=None,
-                    sequence=0,
-                    mask=MODE_READ|MODE_WRITE|MODE_EXECUTE):
-        self._obj_rules.append({
-            'type': RULE_TYPE_CLASS,
-            'match': target_class,
-            'allow': allow,
-            'deny': deny,
-            'sequence': sequence, 
-            'mask': mask
-        })
+                    mode=MODE_READ|MODE_WRITE|MODE_EXECUTE):
+        self.group = group
+        self.allow = allow
+        self.deny = deny
+        self.mode = mode
 
-    def attr_rule(self,
-                    target_class,
-                    evaluate=None,
-                    allow=None,
-                    deny=None,
-                    sequence=0,
-                    mask=MODE_READ|MODE_WRITE|MODE_EXECUTE):
-        self._attr_rules.append({
-            'type': RULE_TYPE_CLASS,
-            'match': target_class,
-            'allow': allow,
-            'deny': deny,
-            'sequence': sequence, 
-            'mask': mask
-        })
+    def _acl_to_be_used(self,user,attr,mode,obj):
+        """ Based upon the user's groups, is this ACL appropriate?
+        """
 
+        # If we do not service this mode
+        if not self.mode & mode: 
+            return False
 
-    def match(self,obj,match,attr):
-        if not match:
-            return None
-
-        if isinstance(match,types.UnboundMethodType) or \
-           isinstance(match,types.FunctionType) or \
-           isinstance(match,types.BuiltinFunctionType) or \
-           isinstance(match,types.BuiltinMethodType) \
-           : 
-            if not match(obj,obj_attr,attr):
+        # And check if we can service this request
+        if is_function(self.group):
+            return self.group(user,attr,obj)
+        else:
+            if user.in_group(self.group):
                 return True
+
+        return False
+
+    def _acl_allow_match(self,user,attr,mode,match,obj):
+        """ check if we want to service this request
+        """
+        if is_function(match):
+            return match(user,attr,mode,match,obj)
         else:
             for match_regex in match:
-                if re.search(match_regex,attr):
-                    break
-            else: return True
+                if re.search("^"+match_regex+"$",attr):
+                    return True
+        return None
 
-        return False
+    def _acl_allows(self,user,attr,mode,obj):
+        """ Check if we're allowed to access this attribute based upon
+            ACLs
+        """
 
-    def check_allowed(self,obj,rule,attr):
-        allowed = self.match(obj,rule.get('allow'),attr)
+        # First apply the allow filter
+        allowed = self._acl_allow_match(user,attr,mode,self.allow,obj)
         if not allowed: return False
-        denied = self.match(obj,rule.get('deny'),attr)
+
+        # Then apply the deny filter
+        denied = self._acl_allow_match(user,attr,mode,self.deny,obj)
         if denied: return False
+
         return True
 
-    def obj_allowed(self,
-                    obj,
-                    mode=None):
-        if mode == None:
-            raise Exception("Mode must be set")
-        if not isinstance(obj,walky.objects.ObjectWrapper):
-            raise Exception("Object must be of type walky.objects.ObjectWrapper")
-        obj_fqn = obj.fqn()
-        for rule in self._obj_rules:
-            if not rule['mask'] & mode: continue
-            if rule['type'] == RULE_TYPE_FUNCTION:
-                if rule['match'] == None or rule['match'](obj):
-                    return self.check_allowed(obj,rule,obj_fqn)
-            if rule['type'] == RULE_TYPE_CLASS:
-                if rule['match'] == None or isinstance(obj,rule['match']):
-                    return self.check_allowed(obj,rule,obj_fqn)
-        return False
 
-    def attr_allowed(self,
-                    obj,
-                    attr=None,
-                    mode=None):
-        if mode == None:
-            raise Exception("Mode must be set")
-        # Validate that the user is allowed to access the object
-        if not self.obj_allowed(obj,mode):
+class ACLMixin(object):
+    """ Easy way of adding ACL support to a class.
+        IMPORTANT: This doesn't automatically add security to calling
+        functions and attributes. You'll need to do additional work, or
+        use the ObjectWrapper class for that.
+        This class only makes it possible to do things like check if
+        an attribute is allowed.
+    """
+
+    _acls_ = None
+    _acls_processed_ = {}
+
+    def _acl(self,
+                    groups,
+                    allow=None,
+                    deny=None,
+                    mode=MODE_READ|MODE_WRITE|MODE_EXECUTE,
+                    ):
+        """ Adds a single _acl_ to our cache. Returns the _acl_ structure
+        """
+        if isinstance(groups,ACL):
+            acl = groups
+        else:
+            acl = ACL(groups,allow,deny,mode)
+        self._acls_.append(acl)
+        return acl
+
+    def _acl_set_fqn(self):
+        return self.__module__+"."+self.__class__.__name__
+
+    def _acl_init(self):
+        """ Ensure all the ACL that have been prototyped
+            are objects. This only needs to be called once.
+            Note that there's a bit of craziness in this since
+            we want to ensure that acl_init is called once for
+            each class that inherits (including this one).
+        """
+        acl_fqn = self._acl_set_fqn()
+        if self._acls_processed_.get(acl_fqn): return
+
+        for i in range(len(self._acls_)):
+            acl = self._acls_[i]
+            if isinstance(acl,ACL): continue
+            self._acls_[i] = ACL(*acl)
+
+        self._acls_processed_[acl_fqn] = True
+
+    def _acl_list(self,*acl_list):
+        """ Adds a list of _acl_s to our cache
+        """
+        self._acl_init()
+        for acl in acl_list:
+            self._acl(acl)
+        return self._acls_
+
+
+    def _acl_allows(self,
+                    user,
+                    attr,
+                    mode):
+        """ Checks if a particular obj.attribute (mode) is allowed against
+            our _acl_set
+        """
+
+        # Note that we do not allow any access to attributes
+        # that prefix with _acl
+        if re.search('^_acl',attr): 
             return False
-        # And if we're allowed to access the object, let's see
-        # if we're allowed to access the particular attr
-        for rule in self._attr_rules:
-            if not rule['mask'] & mode: continue
-            if rule['type'] == RULE_TYPE_FUNCTION:
-                if rule['match'] == None or rule['match'](obj,attr):
-                    return self.check_allowed(obj,rule,attr)
-            if rule['type'] == RULE_TYPE_CLASS:
-                if rule['match'] == None or isinstance(obj,rule['match']):
-                    return self.check_allowed(obj,rule,attr)
+
+        # Finally, iterate through the list to see if we can
+        # allow the user to access this attribute
+        for acl in self._acl_list():
+            if acl._acl_to_be_used(user,attr,mode,self):
+                return acl._acl_allows(user,attr,mode,self)
+
         return False
-
-if __name__ == '__main__':
-
-    class TestClass(object):
-        def a(self):
-            return 'yar'
-        b = 'foo'
-        _c = None
-
-    acl = ACL()
-
-    acl.obj_rule( 
-        TestClass,
-        ['.*'],
-        []
-    )
-    acl.attr_rule(
-        None,
-        ['.*'],
-        ['_.*']
-    )
-
-    tc = TestClass()
-    wtc = walky.objects.ObjectWrapper(tc)
-
-    print "ALLOW" if acl.attr_allowed(wtc,'b',MODE_EXECUTE) else "NOPE"
-    print "ALLOW" if acl.attr_allowed(wtc,'_b',MODE_EXECUTE) else "NOPE"
-
-    # print "ALLOW" if acl.allowed(tc,mode=MODE_OBJECT) else "NOPE"
 

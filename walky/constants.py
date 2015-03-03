@@ -1,6 +1,10 @@
 import types
 import httplib
 
+##############################
+# Protocol
+##############################
+
 REQ_OBJID = 0
 REQ_METHOD = 1
 REQ_ARGS = 2
@@ -21,6 +25,15 @@ PAYLOAD_ATTRIBUTE_METHOD = 9
 PAYLOAD_EVENT = 11
 PAYLOAD_SYSTEM = 12
 
+##############################
+# Mapper
+##############################
+SOURCE_CLASS = 0
+MAPPED_CLASS = 1
+
+##############################
+# Normalization
+##############################
 PRIMITIVE_TYPES = (
               types.StringType,
               types.UnicodeType,
@@ -31,6 +44,21 @@ PRIMITIVE_TYPES = (
               types.BooleanType
             )
 
+##############################
+# ACL 
+##############################
+ALLOW_ALL = ['.*']
+DENY_ALL = ['.*']
+DENY_NONE = []
+DENY_UNDERSCORED = ['_.*']
+
+MODE_READ = 0x04
+MODE_WRITE = 0x02
+MODE_EXECUTE = 0x01
+
+##############################
+# Exceptions
+##############################
 class WalkyException(Exception): 
       error_code = httplib.INTERNAL_SERVER_ERROR
 

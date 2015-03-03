@@ -1,27 +1,46 @@
-#!/usr/bin/python
+import unittest
 
-import walky.port
+from walky.port import *
 
-class TestPort(walky.port.Port):
+class TestPort(Port):
+
+    def init(self):
+        self.buffer_recv = []
+        self.buffer_send = []
+
     def _receiveline(self):
-        return "GOT A MESSAGE!\r\n"
+        return self.buffer_recv.pop()
 
-    def on_receiveline(self,line):
-        """ Test fixture, do nothing
-        """
-        pass
+    def on_receiveline(self,line): pass
 
     def _sendline(self,line):
-        raise Exception(line)
-        return
+        self.buffer_send.append(line)
 
-p = TestPort(
-      id="TESTID"
-      )
+class Test(unittest.TestCase):
 
-print p
-print p.receiveline()
-print p.sendline("TESTTESTTEST")
+    def test_port(self):
+
+        p = TestPort(id="TESTID")
+
+        self.assertTrue(p)
+        self.assertEqual(p.id,"TESTID")
+
+        l_recv = u"TEST123"
+        p.buffer_recv.append(l_recv)
+        l = p.receiveline()
+        self.assertEqual(l,l_recv)
+
+        l_send = u"TEST456"
+        p.sendline(l_send)
+        l = p.buffer_send.pop()
+        self.assertEqual(
+            l,
+            l_send+"\r\n" # appends crlf
+        )
+
+
+if __name__ == '__main__':
+    unittest.main()
 
 
 

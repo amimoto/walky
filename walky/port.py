@@ -11,12 +11,19 @@ class Port(object):
     _active = True
     _active_timeout = False
 
-    def __init__(self,id,controller=None,service=None):
+    def __init__(self,id,controller=None,service=None,*args,**kwargs):
         if controller: self.controller(controller)
         if service: self.service(service)
 
         # The ID should be a cryptographically secure identifier.
         self.id = id
+
+        self.init(*args,**kwargs)
+
+    def init(self,*args,**kwargs):
+        """ Just to make subclassing easier
+        """
+        pass
 
     def active(self,active=None,active_timeout=None):
         """ Getter/Setter to describe the current state. The state is

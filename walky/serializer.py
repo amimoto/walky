@@ -136,7 +136,7 @@ class Serializer(object):
                 data[k] = self.struct_denormalize(v)
             return data
 
-class ServiceSerializer(Serializer):
+class ConnectionSerializer(Serializer):
     """ This class is used by the server to encode data into
         a useful format.
     """

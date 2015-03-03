@@ -3,9 +3,10 @@ import re
 import weakref
 
 from walky.constants import *
+from walky.acl import *
 from walky.utils import *
 
-class ObjectWrapper(object):
+class ObjectWrapper(ACLMixin):
     """ Helper class to wrap an object for controlling
         what a user can perform. The way the system determines
         what attributes are accessible is controlled via
@@ -25,35 +26,25 @@ class ObjectWrapper(object):
 
         It's kind of a DENY->allow->deny scheme.
 
-        The allow and deny properties are arrays. If the array
-        is empty, it is treated as to mean match nothing.
-
-        Entries in the allow and deny properties must be regular
-        expressions.
-
-        To allow full access, do
-
-        allow = ['.*']
-        deny = []
-
-        To allow everything except for entries starting with '_', do
-
-        allow = ['.*']
-        deny = ['_.*']
 
     """
     _obj = None
-    _allow = []
-    _deny = ['_.*']
+    _context = None
+    _acls_ = []
 
-    def __init__(self,obj,allow=None,deny=None,*args,**kwargs):
+    def __init__(self,obj,context,*args,**kwargs):
         """ Take the object to be wrapped so allow for 
             some access security on the functions.
         """
         self._setobj_(obj)
-        if allow != None: self._allow = allow
-        if deny != None: self._deny = deny
+        self.context(context)
         self._init_(*args,**kwargs)
+
+    @object_method_prevent_rpc
+    def context(self,context=None):
+        if context is not None:
+            self._context = weakref.ref(context)
+        return self._context()
 
     @object_method_prevent_rpc
     def fqn(self):
@@ -93,18 +84,8 @@ class ObjectWrapper(object):
         if hasattr(obj_attr,'_norpc'):
             raise InvalidObjectMethod(k)
 
-        # First the allow
-        if not self._allow: 
+        if not self._acl_allows(self.context().user(),k,MODE_READ):
             raise InvalidObjectMethod(k)
-        for allow_regex in self._allow:
-            if re.search(allow_regex,k):
-                break
-        else: raise InvalidObjectMethod(k)
-
-        # Then the deny
-        for deny_regex in self._deny:
-            if re.search(deny_regex,k):
-                raise InvalidObjectMethod(k)
 
         # Made it through the gauntlet, it's okay
         return obj_attr
@@ -117,11 +98,13 @@ class ObjectWrapper(object):
             to access that attribute.
         """
         obj_attr = self._getattr_(k)
-        if isinstance(obj_attr,types.UnboundMethodType) or \
-           isinstance(obj_attr,types.FunctionType) or \
-           isinstance(obj_attr,types.BuiltinFunctionType) or \
-           isinstance(obj_attr,types.BuiltinMethodType) \
-           : 
+        if is_function(obj_attr):
+            if not self._acl_allows(
+                        self.context().user(),
+                        k,
+                        MODE_EXECUTE
+                      ):
+                raise InvalidObjectMethod(k)
             return lambda *a,**kw: obj_attr(*a,**kw)
         return obj_attr
 

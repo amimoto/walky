@@ -5,6 +5,7 @@ class Context(object):
     _sess = None
     _conn = None
     _user = None
+    _router = None
 
     def __init__(self,**kwargs):
         for k,v in kwargs.iteritems():
@@ -14,15 +15,44 @@ class Context(object):
         self._sys = None
         self._sess = None
         self._conn = None
+        self._router = None
 
-    def object_get(self,obj_id):
+    def registries(self,include_global=True):
+        """ Returns a list of all registries that we should scan
+        """
+        reg_list = [self.sess(),self.conn()]
+        if include_global:
+            reg_list.insert(0,self.sys())
+        return filter(None,reg_list)
+
+    def object_get(self,reg_obj_id):
         """ Attempt to retreive the object via search through the 
             object registry.
         """
-        for reg in [self.sys(),self.sess(),self.conn()]:
-            if not reg: continue
-            obj = reg.get(obj_id)
+        for reg in self.registries():
+            obj = reg.get(reg_obj_id)
             if obj: return obj
+        return None
+
+    def object_delete(self,reg_obj_id,include_global=False):
+        """ Removes an object from the registry. Note that
+            the system will not comply with the request to remove
+            an object from the global registry unless include_global
+            is set to true
+        """
+        for reg in self.registries(include_global):
+            reg.delete(reg_obj_id)
+
+    def object_registered(self,obj):
+        """ This will scan the registries to find out if the 
+            object has already been registered. 
+            If already registered, returns the object_id. 
+            If not, returns None
+        """
+        reg_obj_id = reg_object_id(obj)
+        for reg in self.registries():
+            if reg.get(reg_obj_id): 
+                return reg_obj_id
         return None
 
     def _get_set_attribute(self,k,v=None):

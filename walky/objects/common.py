@@ -6,6 +6,18 @@ from walky.constants import *
 from walky.acl import *
 from walky.utils import *
 
+def object_id(obj):
+    """ Returns the id of the underlying object if wrapped.
+        If not wrapped, returns the object's id.
+    """
+    if isinstance(obj,ObjectWrapper):
+        return obj.id()
+    else:
+        return id(obj)
+
+def is_wrapped(obj):
+    return isinstance(obj,ObjectWrapper)
+
 class ObjectWrapper(ACLMixin):
     """ Helper class to wrap an object for controlling
         what a user can perform. The way the system determines
@@ -39,6 +51,12 @@ class ObjectWrapper(ACLMixin):
         self._setobj_(obj)
         self.context(context)
         self._init_(*args,**kwargs)
+
+    @object_method_prevent_rpc
+    def id(self):
+        """ Return the id of the underlying object
+        """
+        return id(self._getobj_())
 
     @object_method_prevent_rpc
     def context(self,context=None):

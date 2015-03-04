@@ -46,6 +46,10 @@ class Test(unittest.TestCase):
         wrapped_obj = context.object_get(obj_id2)
         self.assertEqual(wrapped2,wrapped_obj)
 
+        # Let's remove an object and check to see that it's gone
+        context.object_delete(obj_id2)
+        self.assertNone(context.object_get(obj_id2))
+
 if __name__ == '__main__':
     unittest.main()
 

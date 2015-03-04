@@ -1,6 +1,7 @@
 import json
 
 from constants import *
+from walky.registry import *
 from utils import *
 
 class NormalizedData(object):
@@ -136,61 +137,61 @@ class Serializer(object):
                 data[k] = self.struct_denormalize(v)
             return data
 
-class ConnectionSerializer(Serializer):
+class HandlerSerializer(Serializer):
     """ This class is used by the server to encode data into
         a useful format.
+
+        By default, this puts all the new objects into
+        the "connection" object registry if the default
+        registry is not chosen.
     """
-    _object_registry = {}
-    _allow = []
-    _deny = []
+    _context = None
+    _registry = None
+
+    def __init__(self,context,registry=None):
+        self.context(context)
+        if not registry:
+            registry = context.conn()
+        self.registry(registry)
+
+    def context(self,context=None):
+        if context is not None:
+            self._context = weakref.ref(context)
+        return self._context()
+
+    def registry(self,registry=None):
+        if registry is not None:
+            self._registry = weakref.ref(registry)
+        return self._registry()
 
     def object_put(self,obj):
         """ Replace the object with a lookup reference
         """
-        obj_id = hex(id(obj))[2:]
-        self._object_registry[obj_id] = obj
-        return obj_id
+        context = self.context()
 
-    def object_get(self,obj_id):
+        # Is it already registered? If so, just return the reference
+        reg_obj_id = context.object_registered(obj)
+        if reg_obj_id: return reg_obj_id
+
+        # If it hasn't been already registered, let's route it into
+        # the proper wrapper then register it
+        router = context.router()
+        wrapped = router.map(obj,context)
+
+        return self.registry().put(wrapped)
+
+    def object_get(self,reg_obj_id):
         """ Fetch the object based upon the lookup reference
         """
-        if obj_id not in self._object_registry:
-            raise InvalidObjectID(obj_id)
-        return self._object_registry[obj_id]
+        return self.context().object_get(reg_obj_id)
 
-    def object_del(self,obj_id):
+    def object_delete(self,reg_obj_id):
         """ Remove the object from the registry (allowing
             the garbage collector to reap it)
         """
-        if obj_id not in self._object_registry:
-            raise InvalidObjectID(obj_id)
-        del self.object_registry[obj_id]
-        return True
+        return self.context().object_delete(reg_obj_id)
 
 
 class SerializerClient(object):
     pass
-
-if __name__ == '__main__':
-
-    class TestClass(object):
-        def a(self):
-            return 'yar'
-        b = 'foo'
-        _c = None
-
-    tc = TestClass()
-    s = ServiceSerializer()
-    print s.dumps(['1234'])
-    print s.dumps({'hello': 'world'})
-    print s.dumps(s)
-    complex_dump = s.dumps({
-                'hello': 'world',
-                'key': {
-                    'key2': tc
-                }
-              })
-
-    print complex_dump
-    print s.loads(complex_dump)
 

@@ -5,8 +5,18 @@ import json
 import weakref
 
 from walky.constants import *
+from walky.objects import *
 from walky.objects.system import *
 from walky.serializer import *
+
+def reg_object_id(obj):
+    """ Returns the registry encoded version of an object's id
+        Uses walky.objects.common.object_id so it will dig down to the
+        underlying object's id if required.
+    """
+    obj_id = object_id(obj)
+    return hex(obj_id)[2:]
+
 
 class Registry(object):
     """ This should contain information required at the 
@@ -20,13 +30,15 @@ class Registry(object):
     def reset(self):
         self._objects_registry = {}
 
-    def get(self,obj_id):
-        return self._objects_registry.get(obj_id)
+    def get(self,reg_obj_id):
+        return self._objects_registry.get(reg_obj_id)
 
     def put(self,obj):
-        obj_id = hex(id(obj))[2:]
-        self._objects_registry[obj_id] = obj
-        return obj_id
+        reg_obj_id = reg_object_id(obj)
+        self._objects_registry[reg_obj_id] = obj
+        return reg_obj_id
         
-
+    def delete(self,reg_obj_id):
+        if reg_obj_id in self._objects_registry:
+            del self._objects_registry[reg_obj_id]
 

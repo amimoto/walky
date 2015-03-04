@@ -1,48 +1,40 @@
+Walky Protocol
+
 Base exchange unit is in Line-Delimited JSON.
 
-Basically, it's JSON with linebreaks taken out except for the end of the object.
+Each line should be an array.
 
-It makes it quite easy to reframe if something gets corrupted.
+The basic structure of the array would look something like this.
 
-Design objectives:
+[ PayloadType:Integer, Payload:Object, MessageID:String, ...Arguments:Optional ]
 
-* Terse
-* Easy to parse
-* Fast to implement
+This will be applied both to queries and responses.
 
-=== Base Principles ===
+The PayloadType:Integer will tell the receiving system what type of data is found
+in the payload.
 
-Under the hood the system is just another RPC system.
-
-The main difference is the method that procedures are called.
-
-The client software uses IDs similar to object addresses.
-
-Then, when a class method is to be invoked, the client will pass the server the object ID, the name of the object method to be called and arguments.
-
-The server then retrieves the object based upon the ID and invokes the appropriate method.
-
-The result of the method is then encoded and returned to the client.
-
-At the protocol is stateful and networks can wreak havoc on stability, there are also mechanisms to restore state for a period of time.
-
-=== Response Messages ===
-
-[ PayloadType:Integer, Payload:Object, MessageID:String ]
-
-PayloadType values:
+== PayloadType:Integer ==
 
 < 0: Error conditions
 0..9: Frequently used messages
 >= 10: System related
 
-Primitive: 0
+Object Method Invocation: 0
+> [ 0, ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
+> Request an object method to be executed
+> ObjectID: string identifying the object holding the function to execute
+> Function: string name of the function to call
+> MessageID: a string value that uniquely identifies the request. Useful for async libraries.
+> args: (optional) array of normalized positional values to pass to the class method
+> kwargs: (optional) dict of normalized values to pass to the class method
+
+Primitive: 1
 > Payload can be used directly without any additional processing
 
-Contains Distributed Object: 1
+Contains Distributed Object: 2
 > Payload CONTAINS distributed objects, further processing required
 
-Distributed Object: 2
+Distributed Object: 3
 > Payload IS a distributed object, further processing required
 > Expanded, the structure would look like:
 > [2,ObjectID:Integer]
@@ -75,20 +67,20 @@ Note that the structure can be nested.
 For instance, take the example of a list of objects. Expanded
 
 [
-  1,
+  2,
   [
-    [2,'1234'],
-    [2,'1235']
+    [3,'1234'],
+    [3,'1235']
   ]
 ]
 
 And for a dict:
 
 [
-  1,
+  2,
   {
-    'key1': [2,'1234'],
-    'key2': [2,'1235']
+    'key1': [3,'1234'],
+    'key2': [3,'1235']
   }
 ]
 
@@ -100,9 +92,7 @@ If MessageIDs are not being used, the value is not present.
 
 === Request Messages ===
 
-There are two modes:
-
-[ ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
+[ 0, ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
 
 ObjectID: string identifying the object holding the function to execute
 Function: string name of the function to call
@@ -129,7 +119,7 @@ They are:
 This is a core object. It's purpose is to yield metadata associated with
 registered objects in the system.
 
-[ "?", "dir", [ 0, "ObjectID:HexString" ], MessageID:String ]
+[ 0, "?", "dir", [ 0, "ObjectID:HexString" ], MessageID:String ]
 
 Returns a list of all the attributes of the object.
 
@@ -139,7 +129,7 @@ This effectively is like calling 'dir'.
 
 The server's response should be:
 
-[ 0, [ attr1, ..., attrn ], MessageID:String(if any) ]
+[ 1, [ attr1, ..., attrn ], MessageID:String(if any) ]
 
 [ "?", "ObjectID:HexString.Attribute:String" ]
 
@@ -156,7 +146,7 @@ If the attribute is an object method, then the system will return a message code
 This is a core object. It's purpose is to set attributes associated with 
 regisered objects in the system.
 
-[ "=", "ObjectID:HexString.Attribute:String", PayLoad:Object, MessageID:String ]
+[ 0, "=", "ObjectID:HexString.Attribute:String", PayLoad:Object, MessageID:String ]
 
 This will set the object's attribute to a particular value.
 
@@ -169,7 +159,7 @@ This can potentially be a dangerous ability so it's controlled by a set of permi
 Also a core object. This lives as a way to help the garbage collector know when
 an object no longer must be stored in memory.
 
-[ "-", 'ObjectID:HexString', MessageID:String ]
+[ 0, "-", 'ObjectID:HexString', MessageID:String ]
 
 Removes the object from the reference, effectively "free" the resource.
 
@@ -187,7 +177,7 @@ Networks are not necessarily stable, anything from a temporary hiccup to hitting
 
 To allow the reconnection from a broken state, a method of restoring state is provided.
 
-[ "@", Function:String ]
+[ 0, "@", Function:String ]
 
 ===== Functions =====
 
@@ -197,13 +187,15 @@ Request the current session to be retained for up to Seconds:Integer seconds.
 
 If successful, the server's response should be:
 
-[ 0, SessionKey:String, MessageID:String(if any) ]
+[ 1, SessionKey:String, MessageID:String(if any) ]
 
 SessionKey is a unique identifier that allows the user to resume to a session
 
 In some cases no sessionkey may be available, such as when the user is not logged in or the port is in unrecoverable error state.
 
 @.resume( SessionKey:String )
+
+
 
 
 

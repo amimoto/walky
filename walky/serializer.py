@@ -5,8 +5,33 @@ from walky.registry import *
 from utils import *
 
 class NormalizedData(object):
-    def __init__(self,data):
+    def __init__(self,data=None):
         self.data = data
+
+    def struct_normalize(self,serializer):
+        return self.data
+
+class Request(NormalizedData):
+    """ When a object method invocation (PayloadType=0) comes in,
+        it's easier to manage it with its own 
+    """
+    def __init__(self,reg_obj_id,method,*args,**kwargs):
+        self.reg_obj_id = reg_obj_id
+        self.method = method
+        self.args = args
+        self.kwargs = kwargs
+        super(Request,self).__init__()
+    
+    def struct_normalize(self,serializer):
+        data = [
+            PAYLOAD_METHOD_EXECUTE,
+            self.reg_obj_id,
+            self.method,
+        ]
+        if self.args or self.kwargs:
+            data.append(serializer.struct_normalize(self.args))
+            data.append(serializer.struct_normalize(self.kwargs))
+        return data
 
 class Serializer(object):
     """ This allows objects and structures to be encoded in JSON format
@@ -20,22 +45,37 @@ class Serializer(object):
         A normalized struct is a structure that's encoded in a format
         that's ready for Walky serialization (which is really just 
         JSON with certain rules)
+
+        Notes:
+
+        While we use JSON by default, it's quite easy to replace the
+        underlying serialization format by updating the protocol
+        attribute. Due to the port constraints, however, it's eaiser
+        to change the protocol if it's CRLF terminated rather than
+        binary. Binary formats such as ASN.1 are possible, but require
+        updates to how the port handles chunks (currently readline).
+
     """
 
-    def dumps(self,denormalized_struct):
+    protocol = json
+
+    def dumps(self,denormalized_struct,message_id):
         """ Converts the data provided into a serialized format
             ready for transport
         """
-
         normalized_struct = self.struct_normalize(denormalized_struct)
-        return json.dumps(normalized_struct)
+        normalized_struct.append(message_id)
+        return self.protocol.dumps(normalized_struct)
 
     def loads(self,s):
-        """ Converts the received json serialized Walky object into
-            a denormalized structure
+        """ Converts the received serialized Walky object into a 
+            denormalized structure and the associated message id.
         """
-        normalized_struct = json.loads(s)
-        return self.struct_denormalize(normalized_struct)
+        normalized_struct = self.protocol.loads(s)
+        message_id = normalized_struct[-1]
+        denormalized_struct = self.struct_denormalize(normalized_struct)
+        return denormalized_struct, message_id
+
 
     def object_put(self,obj):
         """ Replace the object with a lookup reference
@@ -59,7 +99,7 @@ class Serializer(object):
         """
 
         if isinstance(denormalized_struct,NormalizedData):
-            return denormalized_struct.data
+            return denormalized_struct.struct_normalize(self)
 
         if type(denormalized_struct) in PRIMITIVE_TYPES:
             return [PAYLOAD_PRIMITIVE, denormalized_struct]
@@ -113,6 +153,17 @@ class Serializer(object):
 
         if payload_type < 0:
             raise Exception(payload)
+
+        if payload_type == PAYLOAD_METHOD_EXECUTE:
+            reg_obj_id = normalized_struct[REQUEST_OBJECT]
+            method = normalized_struct[REQUEST_METHOD]
+            args = []; kwargs = {}
+            if len(normalized_struct)>REQUEST_ARGS:
+                args = self.struct_denormalize(normalized_struct[REQUEST_ARGS])
+            if len(normalized_struct)>REQUEST_KWARGS:
+                kwargs = self.struct_denormalize(normalized_struct[REQUEST_KWARGS])
+
+            return Request(reg_obj_id,method,*args,**kwargs)
 
         if payload_type == PAYLOAD_PRIMITIVE:
             return payload

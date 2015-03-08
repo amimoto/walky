@@ -60,6 +60,10 @@ class ObjectWrapper(ACLMixin):
 
     @object_method_prevent_rpc
     def context(self,context=None):
+        """ Returns the current associated context object
+            If a context is provided, load the context into 
+            the object
+        """
         if context is not None:
             self._context = weakref.ref(context)
         return self._context()

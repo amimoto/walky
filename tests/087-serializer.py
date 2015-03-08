@@ -11,7 +11,6 @@ class Test(unittest.TestCase):
 
     def test_serializer(self):
 
-
         # Initial Prep
         sys_reg = Registry()
         self.assertIsInstance(sys_reg,Registry)
@@ -71,6 +70,26 @@ class Test(unittest.TestCase):
         self.assertEqual(dump_result.method,omi_req.method)
         self.assertEqual(dump_result.args,omi_req.args)
         self.assertEqual(dump_result.kwargs,omi_req.kwargs)
+
+        # Can we serialize system messages?
+        ## System Events
+        se = SystemEvent("BOOM!")
+        json_ev_dump = s.dumps(se,55)
+        self.assertEqual(json_ev_dump,'[11, [1, "BOOM!"], 55]')
+        ( dump_result, message_id ) = s.loads(json_ev_dump)
+        self.assertIsInstance(dump_result,SystemEvent)
+        self.assertEqual(message_id,55)
+        self.assertEqual(dump_result.data,"BOOM!")
+
+        ## Random System Messages
+        se = SystemMessage("BAM!")
+        json_ev_dump = s.dumps(se,56)
+        self.assertEqual(json_ev_dump,'[12, [1, "BAM!"], 56]')
+        ( dump_result, message_id ) = s.loads(json_ev_dump)
+        self.assertIsInstance(dump_result,SystemMessage)
+        self.assertEqual(message_id,56)
+        self.assertEqual(dump_result.data,"BAM!")
+
 
 
 if __name__ == '__main__':

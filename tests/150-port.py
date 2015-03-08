@@ -1,5 +1,6 @@
 import unittest
 
+from walky.context import *
 from walky.port import *
 
 class TestPort(Port):
@@ -20,10 +21,11 @@ class Test(unittest.TestCase):
 
     def test_port(self):
 
-        p = TestPort(id="TESTID")
+        context = Context()
+        p = TestPort(u"TESTID",context)
 
         self.assertTrue(p)
-        self.assertEqual(p.id,"TESTID")
+        self.assertEqual(p.id,u"TESTID")
 
         l_recv = u"TEST123"
         p.buffer_recv.append(l_recv)

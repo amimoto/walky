@@ -11,10 +11,15 @@ class NormalizedData(object):
     def struct_normalize(self,serializer):
         return self.data
 
-class Request(NormalizedData):
+class SystemNormalized(NormalizedData):
+    payload_type = PAYLOAD_SYSTEM
+
+class Request(SystemNormalized):
     """ When a object method invocation (PayloadType=0) comes in,
         it's easier to manage it with its own 
     """
+    payload_type = PAYLOAD_METHOD_EXECUTE
+
     def __init__(self,reg_obj_id,method,*args,**kwargs):
         self.reg_obj_id = reg_obj_id
         self.method = method
@@ -24,7 +29,7 @@ class Request(NormalizedData):
     
     def struct_normalize(self,serializer):
         data = [
-            PAYLOAD_METHOD_EXECUTE,
+            self.payload_type,
             self.reg_obj_id,
             self.method,
         ]
@@ -32,6 +37,22 @@ class Request(NormalizedData):
             data.append(serializer.struct_normalize(self.args))
             data.append(serializer.struct_normalize(self.kwargs))
         return data
+
+class SystemMessage(SystemNormalized):
+    payload_type = PAYLOAD_SYSTEM
+
+    def struct_normalize(self,serializer):
+        data = [
+            self.payload_type,
+            serializer.struct_normalize(self.data),
+        ]
+        return data
+
+class SystemEvent(SystemMessage):
+    payload_type = PAYLOAD_EVENT
+
+class SystemError(SystemMessage):
+    payload_type = PAYLOAD_ERROR
 
 class Serializer(object):
     """ This allows objects and structures to be encoded in JSON format
@@ -151,6 +172,11 @@ class Serializer(object):
         payload_type = normalized_struct[TYPE]
         payload = normalized_struct[PAYLOAD]
 
+        # The most basic possibility. No additional parsing required:
+        if payload_type == PAYLOAD_PRIMITIVE:
+            return payload
+
+        # System messages
         if payload_type < 0:
             raise Exception(payload)
 
@@ -165,9 +191,13 @@ class Serializer(object):
 
             return Request(reg_obj_id,method,*args,**kwargs)
 
-        if payload_type == PAYLOAD_PRIMITIVE:
-            return payload
+        if payload_type == PAYLOAD_EVENT:
+            return SystemEvent(self.struct_denormalize(payload))
 
+        if payload_type == PAYLOAD_SYSTEM:
+            return SystemMessage(self.struct_denormalize(payload))
+
+        # Now, to handle the denormalization of most of the strutures...
         if payload_type == PAYLOAD_DISTRIBUTED_OBJECT:
             return self.object_get(payload)
 

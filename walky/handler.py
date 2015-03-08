@@ -7,7 +7,7 @@ from walky.constants import *
 from walky.objects.system import *
 from walky.serializer import *
 
-class Connection(ConnectionSerializer):
+class Handler(HandlerSerializer):
     """ Represent a single session.
 
         This object holds the data associated with the
@@ -76,7 +76,7 @@ class Connection(ConnectionSerializer):
         return self._port and self._port()
 
     def reset(self):
-        """ Takes the connection and try and take it back to
+        """ Takes the handler and try and take it back to
             factory fresh settings
         """
         self.object_registry = {}

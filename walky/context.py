@@ -6,6 +6,10 @@ class Context(object):
     _conn = None
     _user = None
     _router = None
+    _port = None
+    _dispatch = None
+    _serializer = None
+    _queue = None
 
     def __init__(self,**kwargs):
         for k,v in kwargs.iteritems():
@@ -33,6 +37,16 @@ class Context(object):
             obj = reg.get(reg_obj_id)
             if obj: return obj
         return None
+
+    def object_exec(self,reg_obj_id,method,*args,**kwargs):
+        """ Execute an object's method
+        """
+        obj = self.object_get(request.reg_obj_id)
+        result = getattr(obj,request.method)(
+            *request.args,
+            **request.kwargs
+        )
+        return result
 
     def object_delete(self,reg_obj_id,include_global=False):
         """ Removes an object from the registry. Note that

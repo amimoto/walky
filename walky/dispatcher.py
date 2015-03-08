@@ -2,30 +2,39 @@ import weakref
 import Queue
 
 from walky.serializer import *
-from walky.execpool import *
+from walky.worker import *
 
-class DispatcherExecutionRequest(ExecutionRequest):
+class DispatcherWorkerRequest(WorkerRequest):
 
     _context = None
     _request = None
+    message_id = None
 
-    def __init__(self,context,request):
+    def __init__(self,context,request,message_id):
         self.context(context)
         self.request(request)
+        self.message_id = message_id
 
     def execute(self):
         """ Execute the request
         """
         request = self.request()
         context = self.context()
-        result = context.object_exec(
-            request.reg_obj_id,
-            request.method,
-            *request.args,
-            **request.kwargs
-        )
-        result_line = serializer.dumps(result,message_id)
-        context.port().sendline(result_line)
+        try:
+            result = context.object_exec(
+                request.reg_obj_id,
+                request.method,
+                *request.args,
+                **request.kwargs
+            )
+            result_line = context.serializer().dumps(result,self.message_id)
+            context.port().sendline(result_line)
+        except Exception as ex:
+            result_line = context.serializer().dumps(
+                                            SystemError(str(ex)),
+                                            self.message_id
+                                        )
+            context.port().sendline(result_line)
 
 class Dispatcher(object):
 
@@ -51,7 +60,7 @@ class Dispatcher(object):
         """
         if context is not None:
             self._context = weakref.ref(context)
-        return self._context
+        return self._context()
 
     def port(self,port=None):
         """ Fetches the current port object
@@ -64,14 +73,14 @@ class Dispatcher(object):
         context = self.context()
         serializer = context.serializer()
         ( packet, message_id ) = serializer.loads(line)
-        self.context.messenger().put([packet,message_id])
+        context.messenger().put(packet,message_id)
 
         # In the case of an execution request, we send the job to
         # the execution pool for handling: We don't want to lock up
         # the processing of incoming messages.
         if isinstance(packet,Request):
-            exec_request = DispatcherExecutionRequest(context,packet)
-            context.execpool().put(exec_request)
+            exec_request = DispatcherWorkerRequest(context,packet,message_id)
+            context.crew().put(exec_request)
 
     def sendline(self,line):
         """ Sends another packet to the remote
@@ -92,11 +101,11 @@ class Dispatcher(object):
         msg = sub.get_single_message()
         return msg
 
-    def object_getattr(self,reg_obj_id,attr)
+    def object_getattr(self,reg_obj_id,attr):
         """ Request the attribute from a distributed object
         """
 
-    def object_setattr(self,reg_obj_id,attr,value)
+    def object_setattr(self,reg_obj_id,attr,value):
         """ Sets an attribute on a distributed object
         """
 

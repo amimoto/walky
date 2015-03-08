@@ -184,9 +184,9 @@ class Serializer(object):
             reg_obj_id = normalized_struct[REQUEST_OBJECT]
             method = normalized_struct[REQUEST_METHOD]
             args = []; kwargs = {}
-            if len(normalized_struct)>REQUEST_ARGS:
+            if len(normalized_struct)>(REQUEST_ARGS+1):
                 args = self.struct_denormalize(normalized_struct[REQUEST_ARGS])
-            if len(normalized_struct)>REQUEST_KWARGS:
+            if len(normalized_struct)>(REQUEST_KWARGS+1):
                 kwargs = self.struct_denormalize(normalized_struct[REQUEST_KWARGS])
 
             return Request(reg_obj_id,method,*args,**kwargs)
@@ -243,7 +243,7 @@ class HandlerSerializer(Serializer):
     def registry(self,registry=None):
         if registry is not None:
             self._registry = weakref.ref(registry)
-        return self._registry()
+        return self._registry and self._registry()
 
     def object_put(self,obj):
         """ Replace the object with a lookup reference

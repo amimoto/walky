@@ -16,9 +16,9 @@ class Test(unittest.TestCase):
                 user="USER",
             )
         self.assertIsInstance(c,Context)
-        self.assertEqual(c.sys(),"SYS")
+        self.assertEqual(c.system(),"SYS")
         self.assertEqual(c.conn(),"CONN")
-        self.assertEqual(c.sess(),"SESSION")
+        self.assertEqual(c.sess(),"SESS")
         self.assertEqual(c.user(),"USER")
         c.user("CHANGED")
         self.assertEqual(c.user(),"CHANGED")

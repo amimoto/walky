@@ -7,9 +7,11 @@ class Context(object):
     _user = None
     _router = None
     _port = None
+    _crew = None
     _dispatch = None
     _serializer = None
     _queue = None
+    _messenger = None
 
     def __init__(self,**kwargs):
         for k,v in kwargs.iteritems():
@@ -41,11 +43,8 @@ class Context(object):
     def object_exec(self,reg_obj_id,method,*args,**kwargs):
         """ Execute an object's method
         """
-        obj = self.object_get(request.reg_obj_id)
-        result = getattr(obj,request.method)(
-            *request.args,
-            **request.kwargs
-        )
+        obj = self.object_get(reg_obj_id)
+        result = getattr(obj,method)(*args,**kwargs)
         return result
 
     def object_delete(self,reg_obj_id,include_global=False):

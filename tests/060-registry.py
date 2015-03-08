@@ -48,7 +48,9 @@ class Test(unittest.TestCase):
 
         # Let's remove an object and check to see that it's gone
         context.object_delete(obj_id2)
-        self.assertNone(context.object_get(obj_id2))
+        self.assertTrue(context.object_get(obj_id2))
+        context.object_delete(obj_id)
+        self.assertIsNone(context.object_get(obj_id))
 
 if __name__ == '__main__':
     unittest.main()

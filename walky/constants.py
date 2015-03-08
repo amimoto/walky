@@ -34,8 +34,9 @@ REQUEST_KWARGS = 4
 ##############################
 # Mapper
 ##############################
-SOURCE_CLASS = 0
-MAPPED_CLASS = 1
+TARGET_GROUP = 0
+SOURCE_CLASS = 1
+MAPPED_CLASS = 2
 
 ##############################
 # Normalization

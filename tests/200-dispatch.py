@@ -35,8 +35,6 @@ class TestWrapper(ObjectWrapper):
         MODE_READ|MODE_WRITE|MODE_EXECUTE, # mode
     ] ]
 
-
-
 class Test(unittest.TestCase):
 
     def test_handler(self):
@@ -61,11 +59,11 @@ class Test(unittest.TestCase):
         self.assertIsInstance(sess_reg,Registry)
         conn_reg = Registry()
         self.assertIsInstance(conn_reg,Registry)
-        router = Router()
+        router = Router(context)
         self.assertIsInstance(router,Router)
-        router.mapper(TestClass, TestWrapper)
-        port = TestPort(u"TESTID",context)
-        router.mapper(port, TestPort)
+        router.mapper('testgroup',TestClass,TestWrapper)
+        port = TestPort(u'TESTID',context)
+        router.mapper('testgroup',port,TestPort)
         crew = WorkerCrew()
         crew.start()
         self.assertIsInstance(crew,WorkerCrew)
@@ -93,7 +91,7 @@ class Test(unittest.TestCase):
         self.assertIsInstance(dispatch,Dispatcher)
 
         dispatch.on_readline(u'[0,"{}","somefunc",123]'.format(reg_obj_id))
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         self.assertTrue(port.buffer_send)
         self.assertEqual(port.buffer_send,['[1, "RESULT!", 123]\r\n'])

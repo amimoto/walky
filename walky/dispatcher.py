@@ -27,12 +27,13 @@ class DispatcherWorkerRequest(WorkerRequest):
                 *request.args,
                 **request.kwargs
             )
-            result_line = context.serializer().dumps(result,self.message_id)
+            result_line = context.serializer().dumps(result,self.message_id,context)
             context.port().sendline(result_line)
         except Exception as ex:
             result_line = context.serializer().dumps(
                                             SystemError(str(ex)),
-                                            self.message_id
+                                            self.message_id,
+                                            context
                                         )
             context.port().sendline(result_line)
 
@@ -72,7 +73,7 @@ class Dispatcher(object):
         """
         context = self.context()
         serializer = context.serializer()
-        ( packet, message_id ) = serializer.loads(line)
+        ( packet, message_id ) = serializer.loads(line,context)
         context.messenger().put(packet,message_id)
 
         # In the case of an execution request, we send the job to
@@ -95,7 +96,7 @@ class Dispatcher(object):
         context = self.context()
         serializer = context.serializer()
         message_id = self.message_id_next()
-        line = serializer.dumps(req,message_id)
+        line = serializer.dumps(req,message_id,context)
         sub = context.messenger().subscribe_message_id(message_id)
         self.sendline(line)
         msg = sub.get_single_message()

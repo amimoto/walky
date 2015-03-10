@@ -3,8 +3,8 @@ import unittest
 from walky.constants import *
 from walky.utils import *
 from walky.user import *
-from walky.objects.router import *
 from walky.objects import *
+from walky.router import *
 from walky.context import *
 from walky.registry import *
 
@@ -13,7 +13,7 @@ from _common import *
 class Test(unittest.TestCase):
 
     def test_router(self):
-        context = Context()
+        context = Context(1)
 
         # Initial Prep
         groups = ['testgroup','group2']
@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
 
         # Now start playing with the router
 
-        router = Router(context)
+        router = Router()
         self.assertIsInstance(router,Router)
 
         router.mapper('testgroup', TestClass, ObjectWrapper)

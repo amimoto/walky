@@ -6,11 +6,9 @@ from walky.utils import *
 class Router(object):
 
     _map = None
-    _context = None
 
-    def __init__(self,context,*args,**kwargs):
+    def __init__(self,*args,**kwargs):
         self.reset()
-        self.context(context)
         self.init(*args,**kwargs)
 
     def init(self,*args,**kwargs):
@@ -27,17 +25,8 @@ class Router(object):
             mapped_class
         ])
 
-    def context(self,context=None):
-        """ Returns the current associated context object
-            If a context is provided, load the context into 
-            the object
-        """
-        if context is not None:
-            self._context = weakref.ref(context)
-        return self._context()
-
-    def map(self,obj,*args,**kwargs):
-        user = self.context().user()
+    def map(self,obj,context,*args,**kwargs):
+        user = context.user()
 
         if is_wrapped(obj):
             return obj
@@ -51,10 +40,10 @@ class Router(object):
 
             if is_function(src):
                 if not src(obj): continue
-                return wrapper(obj,*args,**kwargs)
+                return wrapper(obj,context,*args,**kwargs)
 
             elif isinstance(obj,src):
-                return wrapper(obj,*args,**kwargs)
+                return wrapper(obj,context,*args,**kwargs)
 
         raise InvalidObject()
 

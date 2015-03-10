@@ -13,6 +13,7 @@ class Port(object):
     def __init__(self,id,context,*args,**kwargs):
         self.id = id # The ID should be a cryptographically secure identifier.
         self.context(context)
+        context.port(self)
         self.init(*args,**kwargs)
 
     def reset(self):

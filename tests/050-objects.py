@@ -25,7 +25,7 @@ class TestObjects(unittest.TestCase):
                 )
         self.assertIsInstance(user,User)
 
-        c = Context( user=user )
+        c = Context( 1, user=user )
         self.assertIsInstance(c,Context)
 
         # Now wrap!

@@ -9,6 +9,7 @@ from walky.serializer import *
 from walky.dispatcher import *
 from walky.port import *
 from walky.messenger import *
+from walky.service import *
 
 from _common import *
 
@@ -40,6 +41,13 @@ class Test(unittest.TestCase):
     def test_handler(self):
 
         # Initial Prep
+
+
+        # Now test the Service
+        srv = Service()
+
+
+        """
         groups = ['testgroup','group2']
         attrs = {
             'name': 'Potato',
@@ -67,8 +75,7 @@ class Test(unittest.TestCase):
         messenger = Messenger()
         self.assertIsInstance(messenger,Messenger)
 
-
-        context = Context(1)
+        context = Context()
         self.assertIsInstance(context,Context)
 
         port = TestPort(u'TESTID',context)
@@ -99,7 +106,9 @@ class Test(unittest.TestCase):
         self.assertEqual(port.buffer_send,['[1, "RESULT!", 123]\r\n'])
 
         crew.shutdown()
+        """
 
 if __name__ == '__main__':
     unittest.main()
+
 

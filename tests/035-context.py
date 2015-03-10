@@ -10,6 +10,7 @@ class Test(unittest.TestCase):
 
     def test_context(self):
         c = Context(
+                1,
                 system="SYS",
                 conn="CONN",
                 sess="SESS",

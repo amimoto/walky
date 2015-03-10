@@ -21,7 +21,7 @@ class Test(unittest.TestCase):
 
     def test_port(self):
 
-        context = Context()
+        context = Context(1)
         p = TestPort(u"TESTID",context)
 
         self.assertTrue(p)

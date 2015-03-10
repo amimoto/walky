@@ -33,8 +33,12 @@ class Registry(object):
     def get(self,reg_obj_id):
         return self._objects_registry.get(reg_obj_id)
 
-    def put(self,obj):
-        reg_obj_id = reg_object_id(obj)
+    def put(self,obj,reg_obj_id=None):
+        """ Register an object. If reg_obj_id is provided, force
+            the reg_obj_id to be a certain key
+        """
+        if not reg_obj_id:
+            reg_obj_id = reg_object_id(obj)
         self._objects_registry[reg_obj_id] = obj
         return reg_obj_id
         

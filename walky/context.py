@@ -12,16 +12,12 @@ class Context(object):
     _serializer = None
     _queue = None
     _messenger = None
+    id = None
 
-    def __init__(self,**kwargs):
+    def __init__(self,context_id,**kwargs):
+        self.id = context_id
         for k,v in kwargs.iteritems():
             setattr(self,"_"+k,v)
-
-    def reset(self):
-        self._sys = None
-        self._sess = None
-        self._conn = None
-        self._router = None
 
     def registries(self,include_global=True):
         """ Returns a list of all registries that we should scan

@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         conn_reg = Registry()
         self.assertIsInstance(conn_reg,Registry)
 
-        context = Context()
+        context = Context(1)
         self.assertIsInstance(context,Context)
 
         context.sys(sys_reg)

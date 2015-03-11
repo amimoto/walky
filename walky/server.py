@@ -5,19 +5,20 @@ import base64
 
 from walky.user import *
 from walky.constants import *
-from walky.context import *
+from walky.connection import *
 from walky.router import *
 from walky.serializer import *
-from walky.dispatcher import *
 from walky.port import *
 from walky.messenger import *
 
 from _common import *
 
-class Service(object):
+class Server(object):
 
-    contexts = {}
+    connections = {}
     crew = None
+    router = None
+    serializer = None
 
     def __init__(self,*args,**kwargs):
         self.reset()
@@ -40,27 +41,25 @@ class Service(object):
             self.crew.shutdown()
 
     def connection_new(self):
-        """ Creates a new connection by instantiating a new context
+        """ Creates a new connection by instantiating a new connection
         """
-        context_id = self.id_generate()
+        connection_id = self.id_generate()
         sys_reg = Registry()
         sess_reg = Registry()
         conn_reg = Registry()
         user = User(['anon'])
         messenger = Messenger()
-        context = Context(
-                      context_id,
-                      user=user,
-                      sys=sys_reg,
-                      sess=sess_reg,
-                      conn=conn_reg,
-                      router=self.router,
-                      crew=self.crew,
-                      serializer=self.serializer,
-                      messenger=messenger,
-                  )
+        connection = Connection(
+                        connection_id,
+                        server=self,
+                        user=user,
+                        sys=sys_reg,
+                        sess=sess_reg,
+                        conn=conn_reg,
+                        messenger=messenger,
+                    )
 
-        return context
+        return connection
 
     def id_generate(self):
         """ Returns a cryptographically secure 64 bit unique key in 
@@ -69,7 +68,7 @@ class Service(object):
         """
         while True:
             id = base64.b64encode(os.urandom(8))[:-1]
-            if id in self.contexts: continue
+            if id in self.connections: continue
             #if id in self._services: continue
             #if id in self._ports: continue
             break

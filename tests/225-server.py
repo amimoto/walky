@@ -1,7 +1,8 @@
 import unittest
 import time
 
-from walky.service import *
+from walky.server import *
+from walky.router import *
 
 from _common import *
 
@@ -20,20 +21,30 @@ class TestPort(Port):
     def _sendline(self,line):
         self.buffer_send.append(line)
 
-class TestService(Service):
-    pass
+
+class TestWrapper(ObjectWrapper):
+    _acls_ = [ [
+        'testgroup',
+        ALLOW_ALL,
+        DENY_UNDERSCORED,
+        MODE_READ|MODE_WRITE|MODE_EXECUTE, # mode
+    ] ]
 
 class Test(unittest.TestCase):
 
-    def test_service(self):
+    def test_server(self):
 
-        service = TestService(u"TESTID")
-        service.start()
+        server = Server()
+        self.assertIsInstance(server,Server)
 
-        context = service.connection_new()
-        port = TestPort(u"NEWIDENT",context)
+        router = server.router
+        router.mapper('testgroup',TestClass,TestWrapper)
+        self.assertIsInstance(router,Router)
 
-        service.shutdown()
+        conn = server.connection_new()
+        self.assertIsInstance(conn,Connection)
+
+        server.shutdown()
 
 if __name__ == '__main__':
     unittest.main()

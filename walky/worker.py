@@ -81,8 +81,8 @@ class WorkerCrew(object):
         self.pool_launch()
 
     def shutdown(self):
-        for i in range(self._queue_threads):
-            self._work_threads[i].shutdown()
+        for thread in self._work_threads:
+            thread.shutdown()
         self._work_threads = []
             
 

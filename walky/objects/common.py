@@ -41,15 +41,15 @@ class ObjectWrapper(ACLMixin):
 
     """
     _obj = None
-    _context = None
+    _connection = None
     _acls_ = []
 
-    def __init__(self,obj,context,*args,**kwargs):
+    def __init__(self,obj,connection,*args,**kwargs):
         """ Take the object to be wrapped so allow for 
             some access security on the functions.
         """
         self._setobj_(obj)
-        self.context(context)
+        self.connection(connection)
         self._init_(*args,**kwargs)
 
     @object_method_prevent_rpc
@@ -59,14 +59,14 @@ class ObjectWrapper(ACLMixin):
         return id(self._getobj_())
 
     @object_method_prevent_rpc
-    def context(self,context=None):
-        """ Returns the current associated context object
-            If a context is provided, load the context into 
+    def connection(self,connection=None):
+        """ Returns the current associated connection object
+            If a connection is provided, load the connection into 
             the object
         """
-        if context is not None:
-            self._context = weakref.ref(context)
-        return self._context()
+        if connection is not None:
+            self._connection = weakref.ref(connection)
+        return self._connection()
 
     @object_method_prevent_rpc
     def fqn(self):
@@ -106,7 +106,7 @@ class ObjectWrapper(ACLMixin):
         if hasattr(obj_attr,'_norpc'):
             raise InvalidObjectMethod(k)
 
-        if not self._acl_allows(self.context().user(),k,MODE_READ):
+        if not self._acl_allows(self.connection().user(),k,MODE_READ):
             raise InvalidObjectMethod(k)
 
         # Made it through the gauntlet, it's okay
@@ -122,7 +122,7 @@ class ObjectWrapper(ACLMixin):
         obj_attr = self._getattr_(k)
         if is_function(obj_attr):
             if not self._acl_allows(
-                        self.context().user(),
+                        self.connection().user(),
                         k,
                         MODE_EXECUTE
                       ):

@@ -15,7 +15,7 @@ class Router(object):
         pass
 
     def reset(self):
-        self._context = None
+        self._connection = None
         self._map = []
 
     def mapper(self,groupname,source_class,mapped_class):
@@ -25,8 +25,8 @@ class Router(object):
             mapped_class
         ])
 
-    def map(self,obj,context,*args,**kwargs):
-        user = context.user()
+    def map(self,obj,connection,*args,**kwargs):
+        user = connection.user()
 
         if is_wrapped(obj):
             return obj
@@ -40,10 +40,10 @@ class Router(object):
 
             if is_function(src):
                 if not src(obj): continue
-                return wrapper(obj,context,*args,**kwargs)
+                return wrapper(obj,connection,*args,**kwargs)
 
             elif isinstance(obj,src):
-                return wrapper(obj,context,*args,**kwargs)
+                return wrapper(obj,connection,*args,**kwargs)
 
         raise InvalidObject()
 

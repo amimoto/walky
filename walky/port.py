@@ -6,14 +6,14 @@ _logger = logging.getLogger(__name__)
 
 class Port(object):
 
-    _context = None
+    _connection = None
     _active = True
     _active_timeout = False
 
-    def __init__(self,id,context,*args,**kwargs):
+    def __init__(self,id,connection,*args,**kwargs):
         self.id = id # The ID should be a cryptographically secure identifier.
-        self.context(context)
-        context.port(self)
+        self.connection(connection)
+        connection.port(self)
         self.init(*args,**kwargs)
 
     def reset(self):
@@ -24,14 +24,14 @@ class Port(object):
         """
         pass
 
-    def context(self,context=None):
-        """ Returns the current associated context object
-            If a context is provided, load the context into 
+    def connection(self,connection=None):
+        """ Returns the current associated connection object
+            If a connection is provided, load the connection into 
             the object
         """
-        if context is not None:
-            self._context = weakref.ref(context)
-        return self._context()
+        if connection is not None:
+            self._connection = weakref.ref(connection)
+        return self._connection()
 
     def active(self,active=None,active_timeout=None):
         """ Getter/Setter to describe the current state. The state is
@@ -63,7 +63,7 @@ class Port(object):
     def on_receiveline(self,line):
         """ Invoked when a string is received.
         """
-        self.context().dispatch().on_readline(line)
+        self.connection().dispatch().on_readline(line)
 
     def sendline(self,line):
         """ Should send a message over the wire. This function

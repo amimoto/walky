@@ -3,10 +3,9 @@ import time
 
 from walky.user import *
 from walky.constants import *
-from walky.context import *
+from walky.connection import *
 from walky.router import *
 from walky.serializer import *
-from walky.dispatcher import *
 from walky.port import *
 from walky.messenger import *
 
@@ -68,31 +67,32 @@ class Test(unittest.TestCase):
         self.assertIsInstance(messenger,Messenger)
 
 
-        context = Context(1)
-        self.assertIsInstance(context,Context)
+        class DummyServer(object):
+            pass
+        server = DummyServer()
+        server.router = router
+        server.crew = crew
+        server.serializer = serializer
 
-        port = TestPort(u'TESTID',context)
+        connection = Connection(1,server=server)
+        self.assertIsInstance(connection,Connection)
+
+        port = TestPort(u'TESTID',connection)
         router.mapper('testgroup',port,TestPort)
 
-        context.user(user)
-        context.sys(sys_reg)
-        context.sess(sess_reg)
-        context.conn(conn_reg)
-        context.router(router)
-        context.serializer(serializer)
-        context.port(port)
-        context.crew(crew)
-        context.messenger(messenger)
+        connection.user(user)
+        connection.sys(sys_reg)
+        connection.sess(sess_reg)
+        connection.conn(conn_reg)
+        connection.port(port)
+        connection.messenger(messenger)
 
-        # Need to load at least one object into the context
+        # Need to load at least one object into the connection
         tc = TestClass()
-        reg_obj_id = context.conn().put(tc)
+        reg_obj_id = connection.conn().put(tc)
 
         # Okay, finall can start testing the dispatcher
-        dispatch = Dispatcher(context=context)
-        self.assertIsInstance(dispatch,Dispatcher)
-
-        dispatch.on_readline(u'[0,"{}","somefunc",123]'.format(reg_obj_id))
+        connection.on_readline(u'[0,"{}","somefunc",123]'.format(reg_obj_id))
         time.sleep(0.1)
 
         self.assertTrue(port.buffer_send)

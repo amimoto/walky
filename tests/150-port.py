@@ -1,6 +1,6 @@
 import unittest
 
-from walky.context import *
+from walky.connection import *
 from walky.port import *
 
 class TestPort(Port):
@@ -21,8 +21,8 @@ class Test(unittest.TestCase):
 
     def test_port(self):
 
-        context = Context(1)
-        p = TestPort(u"TESTID",context)
+        connection = Connection(1)
+        p = TestPort(u"TESTID",connection)
 
         self.assertTrue(p)
         self.assertEqual(p.id,u"TESTID")

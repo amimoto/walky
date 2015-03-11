@@ -3,7 +3,7 @@ import types
 
 from walky.constants import *
 from walky.user import *
-from walky.context import *
+from walky.connection import *
 from walky.objects import *
 
 from _common import *
@@ -25,8 +25,8 @@ class TestObjects(unittest.TestCase):
                 )
         self.assertIsInstance(user,User)
 
-        c = Context( 1, user=user )
-        self.assertIsInstance(c,Context)
+        c = Connection( 1, user=user )
+        self.assertIsInstance(c,Connection)
 
         # Now wrap!
         class TestWrapper(ObjectWrapper):

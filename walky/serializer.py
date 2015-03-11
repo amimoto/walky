@@ -8,7 +8,7 @@ class NormalizedData(object):
     def __init__(self,data=None):
         self.data = data
 
-    def struct_normalize(self,serializer,context):
+    def struct_normalize(self,serializer,connection):
         return self.data
 
 class SystemNormalized(NormalizedData):
@@ -27,24 +27,24 @@ class Request(SystemNormalized):
         self.kwargs = kwargs
         super(Request,self).__init__()
     
-    def struct_normalize(self,serializer,context):
+    def struct_normalize(self,serializer,connection):
         data = [
             self.payload_type,
             self.reg_obj_id,
             self.method,
         ]
         if self.args or self.kwargs:
-            data.append(serializer.struct_normalize(self.args,context))
-            data.append(serializer.struct_normalize(self.kwargs,context))
+            data.append(serializer.struct_normalize(self.args,connection))
+            data.append(serializer.struct_normalize(self.kwargs,connection))
         return data
 
 class SystemMessage(SystemNormalized):
     payload_type = PAYLOAD_SYSTEM
 
-    def struct_normalize(self,serializer,context):
+    def struct_normalize(self,serializer,connection):
         data = [
             self.payload_type,
-            serializer.struct_normalize(self.data,context),
+            serializer.struct_normalize(self.data,connection),
         ]
         return data
 
@@ -80,55 +80,55 @@ class Serializer(object):
 
     protocol = json
 
-    def dumps(self,denormalized_struct,message_id,context):
+    def dumps(self,denormalized_struct,message_id,connection):
         """ Converts the data provided into a serialized format
             ready for transport
         """
-        normalized_struct = self.struct_normalize(denormalized_struct,context)
+        normalized_struct = self.struct_normalize(denormalized_struct,connection)
         normalized_struct.append(message_id)
         return self.protocol.dumps(normalized_struct)
 
-    def loads(self,s,context):
+    def loads(self,s,connection):
         """ Converts the received serialized Walky object into a 
             denormalized structure and the associated message id.
         """
         normalized_struct = self.protocol.loads(s)
         message_id = normalized_struct[-1]
-        denormalized_struct = self.struct_denormalize(normalized_struct,context)
+        denormalized_struct = self.struct_denormalize(normalized_struct,connection)
         return denormalized_struct, message_id
 
-    def object_put(self,obj,context):
+    def object_put(self,obj,connection):
         """ Replace the object with a lookup reference
         """
         # Is it already registered? If so, just return the reference
-        reg_obj_id = context.object_registered(obj)
+        reg_obj_id = connection.object_registered(obj)
         if reg_obj_id: return reg_obj_id
 
         # If it hasn't been already registered, let's route it into
         # the proper wrapper then register it
-        router = context.router()
-        wrapped = router.map(obj,context)
+        router = connection.server().router
+        wrapped = router.map(obj,connection)
 
-        return context.conn().put(wrapped)
+        return connection.conn().put(wrapped)
 
-    def object_get(self,reg_obj_id,context):
+    def object_get(self,reg_obj_id,connection):
         """ Fetch the object based upon the lookup reference
         """
-        return context.object_get(reg_obj_id)
+        return connection.object_get(reg_obj_id)
 
-    def object_delete(self,reg_obj_id,context):
+    def object_delete(self,reg_obj_id,connection):
         """ Remove the object from the registry (allowing
             the garbage collector to reap it)
         """
-        return context.object_delete(reg_obj_id)
+        return connection.object_delete(reg_obj_id)
 
-    def struct_normalize(self,denormalized_struct,context):
+    def struct_normalize(self,denormalized_struct,connection):
         """ Normalize a structure. Turn it into the structure
             format expected for serialization.
         """
 
         if isinstance(denormalized_struct,NormalizedData):
-            return denormalized_struct.struct_normalize(self,context)
+            return denormalized_struct.struct_normalize(self,connection)
 
         if type(denormalized_struct) in PRIMITIVE_TYPES:
             return [PAYLOAD_PRIMITIVE, denormalized_struct]
@@ -140,7 +140,7 @@ class Serializer(object):
             for k, v in denormalized_struct.iteritems():
                 if type(k) not in PRIMITIVE_TYPES:
                     raise InvalidDictKeyType(k)
-                nv = self.struct_normalize(v,context)
+                nv = self.struct_normalize(v,connection)
                 normalized_struct[k] = nv
                 if nv[TYPE] != PAYLOAD_PRIMITIVE:
                     is_simple =False
@@ -156,7 +156,7 @@ class Serializer(object):
             normalized_struct = []
             is_simple = True
             for v in denormalized_struct:
-                nv = self.struct_normalize(v,context)
+                nv = self.struct_normalize(v,connection)
                 normalized_struct.append(nv)
                 if nv[TYPE] != PAYLOAD_PRIMITIVE:
                     is_simple =False
@@ -168,7 +168,7 @@ class Serializer(object):
             return [PAYLOAD_CONTAINS_DISTRIBUTED,normalized_struct]
 
         if isinstance(denormalized_struct,types.ObjectType):
-            obj_id = self.object_put(denormalized_struct,context)
+            obj_id = self.object_put(denormalized_struct,connection)
             return [
                 PAYLOAD_DISTRIBUTED_OBJECT,
                 obj_id
@@ -176,7 +176,7 @@ class Serializer(object):
 
         raise InvalidStruct("Cannot Encode this Struct")
 
-    def struct_denormalize(self,normalized_struct,context):
+    def struct_denormalize(self,normalized_struct,connection):
         payload_type = normalized_struct[TYPE]
         payload = normalized_struct[PAYLOAD]
 
@@ -193,21 +193,21 @@ class Serializer(object):
             method = normalized_struct[REQUEST_METHOD]
             args = []; kwargs = {}
             if len(normalized_struct)>(REQUEST_ARGS+1):
-                args = self.struct_denormalize(normalized_struct[REQUEST_ARGS],context)
+                args = self.struct_denormalize(normalized_struct[REQUEST_ARGS],connection)
             if len(normalized_struct)>(REQUEST_KWARGS+1):
-                kwargs = self.struct_denormalize(normalized_struct[REQUEST_KWARGS],context)
+                kwargs = self.struct_denormalize(normalized_struct[REQUEST_KWARGS],connection)
 
             return Request(reg_obj_id,method,*args,**kwargs)
 
         if payload_type == PAYLOAD_EVENT:
-            return SystemEvent(self.struct_denormalize(payload,context))
+            return SystemEvent(self.struct_denormalize(payload,connection))
 
         if payload_type == PAYLOAD_SYSTEM:
-            return SystemMessage(self.struct_denormalize(payload,context))
+            return SystemMessage(self.struct_denormalize(payload,connection))
 
         # Now, to handle the denormalization of most of the strutures...
         if payload_type == PAYLOAD_DISTRIBUTED_OBJECT:
-            return self.object_get(payload,context)
+            return self.object_get(payload,connection)
 
         if payload_type != PAYLOAD_CONTAINS_DISTRIBUTED:
             # FIXME: Give a better error message?
@@ -215,7 +215,7 @@ class Serializer(object):
 
         if isinstance(payload,types.ListType):
             data = [
-                self.struct_denormalize(v,context) \
+                self.struct_denormalize(v,connection) \
                     for v in payload
             ]
             return data
@@ -223,6 +223,6 @@ class Serializer(object):
         if isinstance(payload,types.DictType):
             data = {}
             for k, v in payload.iteritems():
-                data[k] = self.struct_denormalize(v,context)
+                data[k] = self.struct_denormalize(v,connection)
             return data
 

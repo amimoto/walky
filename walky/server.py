@@ -47,7 +47,7 @@ class Server(object):
         sys_reg = Registry()
         sess_reg = Registry()
         conn_reg = Registry()
-        user = User(['anon'])
+        user = User(['anonymous'])
         messenger = Messenger()
         connection = Connection(
                         connection_id,

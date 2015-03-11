@@ -6,6 +6,7 @@ class User(object):
     _attributes = None
     _groups = None
     _lock = False
+    authenticated = False
 
     def __init__(self,groups=None,attributes=None):
         self._attributes = attributes or {}

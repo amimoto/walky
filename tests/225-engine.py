@@ -1,7 +1,7 @@
 import unittest
 import time
 
-from walky.server import *
+from walky.engine import *
 from walky.router import *
 
 from _common import *
@@ -32,18 +32,18 @@ class TestWrapper(ObjectWrapper):
 
 class Test(unittest.TestCase):
 
-    def test_server(self):
+    def test_engine(self):
 
-        server = Server()
-        self.assertIsInstance(server,Server)
+        engine = Engine()
+        self.assertIsInstance(engine,Engine)
 
-        server.start()
+        engine.start()
 
-        router = server.router
+        router = engine.router
         router.mapper('anon',TestClass,TestWrapper)
         self.assertIsInstance(router,Router)
 
-        connection = server.connection_new()
+        connection = engine.connection_new()
         self.assertIsInstance(connection,Connection)
 
         port = TestPort(u'TESTID',connection)
@@ -61,7 +61,7 @@ class Test(unittest.TestCase):
         self.assertTrue(port.buffer_send)
         self.assertEqual(port.buffer_send,['[1, "RESULT!", 123]\r\n'])
 
-        server.shutdown()
+        engine.shutdown()
 
 if __name__ == '__main__':
     unittest.main()

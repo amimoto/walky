@@ -36,10 +36,10 @@ class Test(unittest.TestCase):
 
         class DummyServer(object):
             pass
-        server = DummyServer()
-        server.router = router
+        engine = DummyServer()
+        engine.router = router
 
-        connection = Connection(1,server=server)
+        connection = Connection(1,engine=engine)
         self.assertIsInstance(connection,Connection)
 
         connection.user(user)

@@ -106,7 +106,7 @@ class Serializer(object):
 
         # If it hasn't been already registered, let's route it into
         # the proper wrapper then register it
-        router = connection.server().router
+        router = connection.engine().router
         wrapped = router.map(obj,connection)
 
         return connection.conn().put(wrapped)

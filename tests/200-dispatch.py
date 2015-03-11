@@ -69,12 +69,12 @@ class Test(unittest.TestCase):
 
         class DummyServer(object):
             pass
-        server = DummyServer()
-        server.router = router
-        server.crew = crew
-        server.serializer = serializer
+        engine = DummyServer()
+        engine.router = router
+        engine.crew = crew
+        engine.serializer = serializer
 
-        connection = Connection(1,server=server)
+        connection = Connection(1,engine=engine)
         self.assertIsInstance(connection,Connection)
 
         port = TestPort(u'TESTID',connection)

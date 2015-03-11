@@ -26,11 +26,11 @@ class ConnectionWorkerRequest(WorkerRequest):
                 *request.args,
                 **request.kwargs
             )
-            result_line = connection.server().serializer.dumps(
+            result_line = connection.engine().serializer.dumps(
                               result,self.message_id,connection)
             connection.port().sendline(result_line)
         except Exception as ex:
-            result_line = connection.server().serializer.dumps(
+            result_line = connection.engine().serializer.dumps(
                                             SystemError(str(ex)),
                                             self.message_id,
                                             connection
@@ -38,7 +38,7 @@ class ConnectionWorkerRequest(WorkerRequest):
             connection.port().sendline(result_line)
 
 class Connection(object):
-    _server = None
+    _engine = None
 
     _sys = None
     _sess = None
@@ -63,10 +63,10 @@ class Connection(object):
     def reset(self):
         self._message_id_last = 0
 
-    def server(self,server=None):
-        if server:
-            self._server = weakref.ref(server)
-        return self._server and self._server()
+    def engine(self,engine=None):
+        if engine:
+            self._engine = weakref.ref(engine)
+        return self._engine and self._engine()
 
 
     def registries(self,include_global=True):
@@ -121,7 +121,7 @@ class Connection(object):
     def on_readline(self,line):
         """ Do an action when we receive an input
         """
-        ( packet, message_id ) = self.server().serializer.loads(line,self)
+        ( packet, message_id ) = self.engine().serializer.loads(line,self)
         self.messenger().put(packet,message_id)
 
         # In the case of an execution request, we send the job to
@@ -129,7 +129,7 @@ class Connection(object):
         # the processing of incoming messages.
         if isinstance(packet,Request):
             exec_request = ConnectionWorkerRequest(self,packet,message_id)
-            self.server().crew.put(exec_request)
+            self.engine().crew.put(exec_request)
 
     def sendline(self,line):
         """ Sends another packet to the remote
@@ -142,7 +142,7 @@ class Connection(object):
         """
         req = Request(reg_obj_id,method,*args,**kwargs)
         message_id = self.message_id_next()
-        line = self.server().serializer.dumps(req,message_id,self)
+        line = self.engine().serializer.dumps(req,message_id,self)
         sub = self.messenger().subscribe_message_id(message_id)
         self.sendline(line)
         msg = sub.get_single_message()

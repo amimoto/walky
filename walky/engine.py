@@ -13,7 +13,7 @@ from walky.messenger import *
 
 from _common import *
 
-class Server(object):
+class Engine(object):
 
     connections = {}
     crew = None
@@ -51,7 +51,7 @@ class Server(object):
         messenger = Messenger()
         connection = Connection(
                         connection_id,
-                        server=self,
+                        engine=self,
                         user=user,
                         sys=sys_reg,
                         sess=sess_reg,

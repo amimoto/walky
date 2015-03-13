@@ -1,6 +1,5 @@
 import unittest
 
-from walky.connection import *
 from walky.port import *
 
 class TestPort(Port):
@@ -21,8 +20,7 @@ class Test(unittest.TestCase):
 
     def test_port(self):
 
-        connection = Connection(1)
-        p = TestPort(u"TESTID",connection)
+        p = TestPort(u"TESTID")
 
         self.assertTrue(p)
         self.assertEqual(p.id,u"TESTID")

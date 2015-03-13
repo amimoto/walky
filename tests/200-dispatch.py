@@ -77,7 +77,7 @@ class Test(unittest.TestCase):
         connection = Connection(1,engine=engine)
         self.assertIsInstance(connection,Connection)
 
-        port = TestPort(u'TESTID',connection)
+        port = TestPort(u'TESTID')
         router.mapper('testgroup',port,TestPort)
 
         connection.user(user)

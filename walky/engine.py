@@ -20,6 +20,8 @@ class Engine(object):
     router = None
     serializer = None
 
+    anon_user = None
+
     def __init__(self,*args,**kwargs):
         self.reset()
         self.init(*args,**kwargs)
@@ -29,6 +31,10 @@ class Engine(object):
         self.crew = WorkerCrew()
         self.router = Router()
         self.serializer = Serializer()
+
+        user = User(['anonymous'])
+        user.lock()
+        self.anon_user = user
 
     def start(self):
         self.crew.start()
@@ -40,24 +46,42 @@ class Engine(object):
         if self.crew:
             self.crew.shutdown()
 
-    def connection_new(self):
+    def port_new(self,port_class=Port,*args,**kwargs):
+        port_id = self.id_generate()
+        port = port_class(
+                    port_id,
+                    *args,
+                    **kwargs
+                )
+        return port
+
+
+    def connection_new(self,
+                        connection_class=Connection,
+                        sys_reg=None,
+                        sess_reg=None,
+                        conn_reg=None,
+                        *args,
+                        **kwargs):
         """ Creates a new connection by instantiating a new connection
         """
         connection_id = self.id_generate()
-        sys_reg = Registry()
-        sess_reg = Registry()
-        conn_reg = Registry()
-        user = User(['anonymous'])
+        user = self.anon_user
         messenger = Messenger()
-        connection = Connection(
+        connection = connection_class(
                         connection_id,
+                        *args,
                         engine=self,
                         user=user,
-                        sys=sys_reg,
-                        sess=sess_reg,
-                        conn=conn_reg,
+                        sys=sys_reg or Registry(),
+                        sess=sess_reg or Registry(),
+                        conn=conn_reg or Registry(),
                         messenger=messenger,
+                        **kwargs
                     )
+
+        # Register the newly minted connection!
+        self.connections[connection_id] = connection
 
         return connection
 

@@ -63,11 +63,19 @@ class Connection(object):
     def reset(self):
         self._message_id_last = 0
 
+    def port(self,port=None):
+        """ Magic function that loads the port and updates the port to
+            redirect requests back to us.
+        """
+        if port:
+            self._port = port
+            port.connection(self)
+        return self._port
+
     def engine(self,engine=None):
         if engine:
             self._engine = weakref.ref(engine)
         return self._engine and self._engine()
-
 
     def registries(self,include_global=True):
         """ Returns a list of all registries that we should scan
@@ -121,15 +129,24 @@ class Connection(object):
     def on_readline(self,line):
         """ Do an action when we receive an input
         """
-        ( packet, message_id ) = self.engine().serializer.loads(line,self)
-        self.messenger().put(packet,message_id)
+        engine = self.engine()
+        try:
+            ( packet, message_id ) = engine.serializer.loads(line,self)
+            self.messenger().put(packet,message_id)
 
-        # In the case of an execution request, we send the job to
-        # the execution pool for handling: We don't want to lock up
-        # the processing of incoming messages.
-        if isinstance(packet,Request):
-            exec_request = ConnectionWorkerRequest(self,packet,message_id)
-            self.engine().crew.put(exec_request)
+            # In the case of an execution request, we send the job to
+            # the execution pool for handling: We don't want to lock up
+            # the processing of incoming messages.
+            if isinstance(packet,Request):
+                exec_request = ConnectionWorkerRequest(self,packet,message_id)
+                engine.crew.put(exec_request)
+        except Exception as ex:
+            result_line = self.engine().serializer.dumps(
+                                            SystemError(str(ex)),
+                                            0,
+                                            self
+                                        )
+            self.port().sendline(result_line)
 
     def sendline(self,line):
         """ Sends another packet to the remote

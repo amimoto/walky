@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
         connection = engine.connection_new()
         self.assertIsInstance(connection,Connection)
 
-        port = TestPort(u'TESTID',connection)
+        port = TestPort(u'TESTID')
         connection.port(port)
         self.assertIsInstance(connection,Connection)
 

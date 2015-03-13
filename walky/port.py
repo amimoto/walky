@@ -10,10 +10,11 @@ class Port(object):
     _active = True
     _active_timeout = False
 
-    def __init__(self,id,connection,*args,**kwargs):
+    def __init__(self,id,*args,**kwargs):
+        """ Note: Connection is attached afterwards
+            TODO: Better documentation or layout that makes sense.
+        """
         self.id = id # The ID should be a cryptographically secure identifier.
-        self.connection(connection)
-        connection.port(self)
         self.init(*args,**kwargs)
 
     def reset(self):
@@ -63,7 +64,7 @@ class Port(object):
     def on_receiveline(self,line):
         """ Invoked when a string is received.
         """
-        self.connection().dispatch().on_readline(line)
+        self.connection().on_readline(line)
 
     def sendline(self,line):
         """ Should send a message over the wire. This function

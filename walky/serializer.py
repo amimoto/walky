@@ -209,6 +209,17 @@ class Serializer(object):
         if payload_type == PAYLOAD_DISTRIBUTED_OBJECT:
             return self.object_get(payload,connection)
 
+        # Is this a function to an object?
+        if payload_type == PAYLOAD_ATTRIBUTE_METHOD:
+            def object_function(*args,**kwargs):
+                return connection.object_exec_request(
+                            payload[1],
+                            payload[2],
+                            *args,
+                            **kwargs
+                        )                        
+            return object_function
+
         if payload_type != PAYLOAD_CONTAINS_DISTRIBUTED:
             # FIXME: Give a better error message?
             raise InvalidStruct('Not sure what to do')
@@ -226,3 +237,5 @@ class Serializer(object):
                 data[k] = self.struct_denormalize(v,connection)
             return data
 
+        # FIXME: Give a better error message?
+        raise InvalidStruct('Not sure what to do')

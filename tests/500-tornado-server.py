@@ -1,16 +1,10 @@
+import time
 import unittest
+import threading
 
 from walky.server.tornado import *
+
 from _common import *
-
-
-class TestWrapper(ObjectWrapper):
-    _acls_ = [ [
-        'testgroup',
-        ALLOW_ALL,
-        DENY_UNDERSCORED,
-        MODE_READ|MODE_WRITE|MODE_EXECUTE, # mode
-    ] ]
 
 class MyEngine(Engine):
     def connection_new(self,connection_class=Connection,*args,**kwargs):
@@ -29,19 +23,22 @@ class MyEngine(Engine):
         router = self.router
         router.mapper('anonymous',TestClass,TestWrapper)
 
-class MyTornadoSocketServer(TornadoSocketServer):
-    pass
-
 class Test(unittest.TestCase):
 
     def test_server(self):
         server = TornadoServer(
-                      socket_server_class=MyTornadoSocketServer,
                       engine_class=MyEngine,
                   )
 
         self.assertIsInstance(server,TornadoServer)
-        server.run()
+
+        server_pool = threading.Thread(target=lambda *a: server.run())  
+        server_pool.start()
+
+        time.sleep(10)
+
+        server.shutdown()
+
 
 if __name__ == '__main__':
     unittest.main()

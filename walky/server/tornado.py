@@ -62,17 +62,23 @@ class TornadoServer(object):
     engine = None
     settings = None
 
+    websock_port = WALKY_WEBSOCK_PORT
+    socket_port = WALKY_SOCKET_PORT
+    socket_server_class = TornadoSocketServer
+    websocket_server_class = TornadoWebsockServer
+    engine_class = Engine
+
     def __init__(self,**settings):
-        settings.setdefault('websock_port',8662)
-        settings.setdefault('socket_port',8663)
+        settings.setdefault('websock_port',self.websock_port)
+        settings.setdefault('socket_port',self.socket_port)
         settings.setdefault('data_path','walkydata')
         settings.setdefault('ssl_cert_fpath','ssl.crt')
         settings.setdefault('ssl_key_fpath','ssl.key')
         settings.setdefault('wsgi_fallback_handler',None)
 
-        settings.setdefault('socket_server_class',TornadoSocketServer)
-        settings.setdefault('websocket_server_class',TornadoWebsockServer)
-        settings.setdefault('engine_class',Engine)
+        settings.setdefault('socket_server_class',self.socket_server_class)
+        settings.setdefault('websocket_server_class',self.websocket_server_class)
+        settings.setdefault('engine_class',self.engine_class)
 
         self.settings = settings
 
@@ -108,6 +114,9 @@ class TornadoServer(object):
         except KeyboardInterrupt:
             IOLoop.instance().stop()
             self.engine.shutdown()
+
+    def shutdown(self):
+        self.engine.shutdown()
 
 
 

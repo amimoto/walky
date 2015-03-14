@@ -13,15 +13,7 @@ class Test(unittest.TestCase):
     def test_serializer(self):
 
         # Initial Prep
-        groups = ['testgroup','group2']
-        attrs = {
-            'name': 'Potato',
-            'url': 'http://www.potatos.com',
-        }
-        user = User(
-                    groups,
-                    attrs
-                )
+        user = TestUser()
         self.assertIsInstance(user,User)
 
         sys_reg = Registry()
@@ -34,9 +26,9 @@ class Test(unittest.TestCase):
         self.assertIsInstance(router,Router)
         router.mapper('testgroup', TestClass, ObjectWrapper)
 
-        class DummyServer(object):
+        class DummyEngine(object):
             pass
-        engine = DummyServer()
+        engine = DummyEngine()
         engine.router = router
 
         connection = Connection(1,engine=engine)

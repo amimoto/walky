@@ -23,15 +23,7 @@ class TestACLMixin2(ACLMixin):
 class Test(unittest.TestCase):
 
     def test_acl_mixin(self):
-        groups = ['testgroup','group2']
-        attrs = {
-            'name': 'Potato',
-            'url': 'http://www.potatos.com',
-        }
-        user = User(
-                    groups,
-                    attrs
-                )
+        user = TestUser()
         self.assertIsInstance(user,User)
 
         tam = TestACLMixin()

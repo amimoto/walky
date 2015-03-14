@@ -16,15 +16,7 @@ class Test(unittest.TestCase):
         connection = Connection(1)
 
         # Initial Prep
-        groups = ['testgroup','group2']
-        attrs = {
-            'name': 'Potato',
-            'url': 'http://www.potatos.com',
-        }
-        user = User(
-                    groups,
-                    attrs
-                )
+        user = TestUser()
         self.assertIsInstance(user,User)
         connection.user(user)
 

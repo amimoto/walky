@@ -1,20 +1,6 @@
 import unittest
 
-from walky.port import *
-
-class TestPort(Port):
-
-    def init(self):
-        self.buffer_recv = []
-        self.buffer_send = []
-
-    def _receiveline(self):
-        return self.buffer_recv.pop()
-
-    def on_receiveline(self,line): pass
-
-    def _sendline(self,line):
-        self.buffer_send.append(line)
+from _common import *
 
 class Test(unittest.TestCase):
 

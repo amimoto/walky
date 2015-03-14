@@ -160,4 +160,48 @@ class WeakrefObjectWrapper(ObjectWrapper):
         return self._obj()
 
 
+##################################################
+# Object Stubs:
+# These are used by the client.
+##################################################
+
+class ObjectStub(object):
+    """ When an object reference gets sent over the wire to 
+        a remote system, this class is a handle to the server's object.
+        Heavily overloaded, the object will proxy requests through
+        the connection to make the process seem somewhat transparent.
+
+        Note the weird naming, we're trying to prevent collisions between
+        our functions and potential objects.
+
+        FIXME: It's probably better to use __getattribute__ for real 
+        transparency
+    """
+
+    _walky_connection_weakref = None
+    reg_obj_id = None
+
+    def __init__(self,connection,reg_obj_id):
+        self._walky_connection(connection)
+        self.reg_obj_id = reg_obj_id
+
+    def _walky_connection(self,connection=None):
+        if connection:
+            self._walky_connection_weakref = weakref.ref(connection)
+        return self._walky_connection_weakref and self._walky_connection_weakref()
+
+    def __getattr__(self,k):
+        return self._walky_connection().object_attr_request(self.reg_obj_id,k)
+
+    def __setattr__(self,k,v):
+        if hasattr(self,k):
+            object.__setattr__(self,k,v)
+        else:
+            return self._walky_connection().object_set_request(self.reg_obj_id,k,v)
+
+    def __dir__(self):
+        return self._walky_connection().object_dir_request(self.reg_obj_id)
+
+
+
 

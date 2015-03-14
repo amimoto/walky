@@ -11,5 +11,6 @@ python 075-object-router.py
 python 081-messenger.py
 python 087-serializer.py
 python 150-port.py
+python 175-object-stub.py
 python 200-dispatch.py
 python 225-engine.py

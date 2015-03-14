@@ -11,43 +11,12 @@ from walky.messenger import *
 
 from _common import *
 
-
-class TestPort(Port):
-
-    def init(self):
-        self.buffer_recv = []
-        self.buffer_send = []
-
-    def _receiveline(self):
-        return self.buffer_recv.pop()
-
-    def on_receiveline(self,line): pass
-
-    def _sendline(self,line):
-        self.buffer_send.append(line)
-
-class TestWrapper(ObjectWrapper):
-    _acls_ = [ [
-        'testgroup',
-        ALLOW_ALL,
-        DENY_UNDERSCORED,
-        MODE_READ|MODE_WRITE|MODE_EXECUTE, # mode
-    ] ]
-
 class Test(unittest.TestCase):
 
     def test_handler(self):
 
         # Initial Prep
-        groups = ['testgroup','group2']
-        attrs = {
-            'name': 'Potato',
-            'url': 'http://www.potatos.com',
-        }
-        user = User(
-                    groups,
-                    attrs
-                )
+        user = TestUser()
         self.assertIsInstance(user,User)
         sys_reg = Registry()
         self.assertIsInstance(sys_reg,Registry)

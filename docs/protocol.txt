@@ -111,8 +111,6 @@ They have been given special ObjectIDs that are easily recognizable.
 They are:
 
 "?": Inspection
-"=": Attribute Setting
-"-": Deletion
 
 ==== Interrogation Object ====
 
@@ -146,7 +144,7 @@ If the attribute is an object method, then the system will return a message code
 This is a core object. It's purpose is to set attributes associated with 
 regisered objects in the system.
 
-[ 0, "=", "ObjectID:HexString.Attribute:String", PayLoad:Object, MessageID:String ]
+[ 0, "?", "=", [ "ObjectID:HexString", "Attribute:String", PayLoad:Object ],  MessageID:String ]
 
 This will set the object's attribute to a particular value.
 
@@ -159,7 +157,7 @@ This can potentially be a dangerous ability so it's controlled by a set of permi
 Also a core object. This lives as a way to help the garbage collector know when
 an object no longer must be stored in memory.
 
-[ 0, "-", 'ObjectID:HexString', MessageID:String ]
+[ 0, "?", "del", 'ObjectID:HexString', MessageID:String ]
 
 Removes the object from the reference, effectively "free" the resource.
 

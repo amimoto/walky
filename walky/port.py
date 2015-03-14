@@ -15,6 +15,9 @@ class Port(object):
             TODO: Better documentation or layout that makes sense.
         """
         self.id = id # The ID should be a cryptographically secure identifier.
+        if kwargs.get('connection'):
+            self.connection(kwargs['connection'])
+            del kwargs['connection']
         self.init(*args,**kwargs)
 
     def reset(self):

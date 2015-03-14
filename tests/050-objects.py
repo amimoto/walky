@@ -13,29 +13,11 @@ class TestObjects(unittest.TestCase):
 
     def test_access(self):
 
-        # Prep work
-        groups = ['testgroup','group2']
-        attrs = {
-            'name': 'Potato',
-            'url': 'http://www.potatos.com',
-        }
-        user = User(
-                    groups,
-                    attrs
-                )
+        user = TestUser()
         self.assertIsInstance(user,User)
 
         c = Connection( 1, user=user )
         self.assertIsInstance(c,Connection)
-
-        # Now wrap!
-        class TestWrapper(ObjectWrapper):
-            _acls_ = [ [
-                'testgroup',
-                ALLOW_ALL,
-                DENY_UNDERSCORED,
-                MODE_READ|MODE_WRITE|MODE_EXECUTE, # mode
-            ] ]
 
         tc = TestClass()
         ow = TestWrapper( tc, c )

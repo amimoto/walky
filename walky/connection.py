@@ -50,6 +50,10 @@ class Connection(object):
     _messenger = None
     id = None
 
+    ##################################################
+    # Connection management
+    ##################################################
+
     def __init__(self,connection_id,**kwargs):
         self.reset()
         self.id = connection_id
@@ -84,6 +88,54 @@ class Connection(object):
         if include_global:
             reg_list.insert(0,self.sys())
         return filter(None,reg_list)
+
+    def message_id_next(self):
+        self._message_id_last += 1
+        return self._message_id_last
+
+    def on_readline(self,line):
+        """ Do an action when we receive an input
+        """
+        engine = self.engine()
+        try:
+            ( packet, message_id ) = engine.serializer.loads(line,self)
+            self.messenger().put(packet,message_id)
+
+            # In the case of an execution request, we send the job to
+            # the execution pool for handling: We don't want to lock up
+            # the processing of incoming messages.
+            if isinstance(packet,Request):
+                exec_request = ConnectionWorkerRequest(self,packet,message_id)
+                engine.crew.put(exec_request)
+        except Exception as ex:
+            result_line = self.engine().serializer.dumps(
+                                            SystemError(str(ex)),
+                                            0,
+                                            self
+                                        )
+            self.port().sendline(result_line)
+
+    def sendline(self,line):
+        """ Sends another packet to the remote
+        """
+        self.port().sendline(line)
+
+    def _get_set_attribute(self,k,v=None):
+        if not v is None:
+            setattr(self,k,v)
+        return getattr(self,k)
+
+    def __getattr__(self,k):
+        attr_name = "_" + k
+        object.__getattribute__(self,attr_name)
+        return lambda a=None: self._get_set_attribute(attr_name,a)
+
+
+    ##################################################
+    # Object Server Functions
+    # These functions assume that the object being referenced
+    # by reg_obj_id is LOCAL
+    ##################################################
 
     def object_get(self,reg_obj_id):
         """ Attempt to retreive the object via search through the 
@@ -122,36 +174,11 @@ class Connection(object):
                 return reg_obj_id
         return None
 
-    def message_id_next(self):
-        self._message_id_last += 1
-        return self._message_id_last
-
-    def on_readline(self,line):
-        """ Do an action when we receive an input
-        """
-        engine = self.engine()
-        try:
-            ( packet, message_id ) = engine.serializer.loads(line,self)
-            self.messenger().put(packet,message_id)
-
-            # In the case of an execution request, we send the job to
-            # the execution pool for handling: We don't want to lock up
-            # the processing of incoming messages.
-            if isinstance(packet,Request):
-                exec_request = ConnectionWorkerRequest(self,packet,message_id)
-                engine.crew.put(exec_request)
-        except Exception as ex:
-            result_line = self.engine().serializer.dumps(
-                                            SystemError(str(ex)),
-                                            0,
-                                            self
-                                        )
-            self.port().sendline(result_line)
-
-    def sendline(self,line):
-        """ Sends another packet to the remote
-        """
-        self.port().sendline(line)
+    ##################################################
+    # Object Client Functions
+    # These functions assume that the object being referenced
+    # by reg_obj_id is REMOTE
+    ##################################################
 
     def object_exec_request(self,reg_obj_id,method,*args,**kwargs):
         """ Dispatch a method execution request, then await
@@ -165,23 +192,46 @@ class Connection(object):
         msg = sub.get_single_message()
         return msg
 
-    def object_getattr(self,reg_obj_id,attr):
-        """ Request the attribute from a distributed object
+    def object_attr_request(self,reg_obj_id,attribute):
+        """ Send an attribute query request to the object reflection system
         """
+        return self.object_exec_request(
+                    SYS_INTERROGATION_OBJ_ID,
+                    SYS_INTERROGATION_ATTR_METHOD,
+                    reg_obj_id,
+                    attribute
+                )
 
-    def object_setattr(self,reg_obj_id,attr,value):
-        """ Sets an attribute on a distributed object
+    def object_dir_request(self,reg_obj_id):
+        """ Send a query that fetches all attributes from an obj to the object 
+            reflection system
         """
+        return self.object_exec_request(
+                    SYS_INTERROGATION_OBJ_ID,
+                    SYS_INTERROGATION_DIR_METHOD,
+                    reg_obj_id
+                )
 
-    def _get_set_attribute(self,k,v=None):
-        if not v is None:
-            setattr(self,k,v)
-        return getattr(self,k)
+    def object_set_request(self,reg_obj_id,attribute,value):
+        """ Send a query that fetches all attributes from an obj to the object 
+            reflection system
+        """
+        return self.object_exec_request(
+                    SYS_INTERROGATION_OBJ_ID,
+                    SYS_INTERROGATION_SET_METHOD,
+                    reg_obj_id,
+                    attribute,
+                    value
+                )
 
-    def __getattr__(self,k):
-        attr_name = "_" + k
-        object.__getattribute__(self,attr_name)
-        return lambda a=None: self._get_set_attribute(attr_name,a)
+    def object_del_request(self,reg_obj_id):
+        """ Send a query that deletes an obj from the registries
+        """
+        return self.object_exec_request(
+                    SYS_INTERROGATION_OBJ_ID,
+                    SYS_INTERROGATION_DEL_METHOD,
+                    reg_obj_id
+                )
 
 
 

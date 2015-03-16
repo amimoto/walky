@@ -190,6 +190,8 @@ class Connection(object):
         sub = self.messenger().subscribe_message_id(message_id)
         self.sendline(line)
         msg = sub.get_single_message()
+        if isinstance(msg,Exception):
+            raise msg
         return msg
 
     def object_attr_request(self,reg_obj_id,attribute):

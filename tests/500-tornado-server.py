@@ -3,6 +3,7 @@ import unittest
 import threading
 
 from walky.server.tornado import *
+from walky.client.socket import *
 
 from _common import *
 
@@ -26,16 +27,33 @@ class MyEngine(Engine):
 class Test(unittest.TestCase):
 
     def test_server(self):
-        server = TornadoServer(
-                      engine_class=MyEngine,
-                  )
 
+        # Make the server...
+        server = TornadoServer(engine_class=MyEngine)
         self.assertIsInstance(server,TornadoServer)
 
+        # Start the server
         server_pool = threading.Thread(target=lambda *a: server.run())  
         server_pool.start()
 
-        time.sleep(10)
+        # Allow server to start up
+        time.sleep(0.1)
+
+        # Make the client
+        client = SocketClient()
+        self.assertIsInstance(client,Client)
+
+        # Start the client
+        client.connect('localhost')
+
+        print  "ABOUT TO SEND:"
+        obj = client.object_get('@')
+        print "SENT and waiting"
+
+        print obj.foo
+        print "RECEIVED"
+
+        time.sleep(1)
 
         server.shutdown()
 

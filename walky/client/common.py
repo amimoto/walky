@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import weakref
 import threading
 import asyncore
@@ -36,10 +38,10 @@ class Client(object):
         """ Start the engine and the asyncore
         """
         self.engine.start()
-        self.ioloop = threading.Thread(
-                            target=lambda *a: self.run(),
-                        )
-        self.ioloop.start()
+        self.connection = self.engine.connection_new()
+
+    def run(self):
+        pass
 
     def on_readline(self,line):
         try:
@@ -51,7 +53,7 @@ class Client(object):
         self.port().sendline(line)
 
     def object_get(self,reg_obj_id):
-        return self.object_class(self,reg_obj_id)
+        return self.object_class(self.connection,reg_obj_id)
 
     def shutdown(self):
         self.engine.shutdown()

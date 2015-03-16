@@ -21,6 +21,7 @@ class TornadoWebsockServer(websocket.WebSocketHandler):
 
 class TornadoSocketServerPort(Port):
     def init(self,stream,address,*args,**kwargs):
+        print "CONNECTED:", address
         self.stream = stream
         self.address = address
         self.read_next()
@@ -30,6 +31,7 @@ class TornadoSocketServerPort(Port):
         self.stream.read_until('\n', self.on_receiveline)
 
     def on_receiveline(self, line):
+        print "RECEIVED LINE:", line
         line = line.decode('utf8').strip()
         super(TornadoSocketServerPort,self).on_receiveline(line)
 
@@ -52,6 +54,7 @@ class TornadoSocketServer(TCPServer):
         super(TornadoSocketServer,self).__init__(*args,**kwargs)
 
     def handle_stream(self, stream, address):
+        print "INCOMING!",address
         port = self.server.engine.port_new(
                                       TornadoSocketServerPort,
                                       stream, address

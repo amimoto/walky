@@ -185,8 +185,9 @@ class Serializer(object):
             return payload
 
         # System messages
+        # FIXME: Need to handle all types of error messages
         if payload_type < 0:
-            raise Exception(payload)
+            return Exception(self.struct_denormalize(payload,connection))
 
         if payload_type == PAYLOAD_METHOD_EXECUTE:
             reg_obj_id = normalized_struct[REQUEST_OBJECT]

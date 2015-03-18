@@ -14,3 +14,6 @@ python 150-port.py
 python 175-object-stub.py
 python 200-dispatch.py
 python 225-engine.py
+python 350-client-socket.py
+python 500-tornado-server.py
+

@@ -36,7 +36,6 @@ class Test(unittest.TestCase):
         server_pool.daemon = False
         server_pool.start()
 
-        """
         # Allow server to start up
         time.sleep(0.1)
 
@@ -52,11 +51,8 @@ class Test(unittest.TestCase):
             obj.foo
 
         self.assertEqual(obj.b,'foo')
-        """
 
-        time.sleep(10)
-
-        # client.close()
+        client.close()
         server.shutdown()
 
 

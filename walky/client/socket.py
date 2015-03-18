@@ -77,6 +77,7 @@ class SocketClient(Client):
 
     def close(self):
         self.port.close()
+        super(SocketClient,self).close()
 
     def connect(self,host=None,port=None,*args,**kwargs):
         super(SocketClient,self).connect()
@@ -98,5 +99,6 @@ class SocketClient(Client):
         self.ioloop = threading.Thread(
                             target=lambda *a: self.run(),
                         )
+        self.ioloop.daemon = True
         self.ioloop.start()
 

@@ -55,7 +55,7 @@ class Client(object):
     def object_get(self,reg_obj_id):
         return self.object_class(self.connection,reg_obj_id)
 
-    def shutdown(self):
+    def close(self):
         self.engine.shutdown()
 
 

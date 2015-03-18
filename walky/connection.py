@@ -214,7 +214,7 @@ class Connection(object):
                     reg_obj_id
                 )
 
-    def object_set_request(self,reg_obj_id,attribute,value):
+    def object_attr_set_request(self,reg_obj_id,attribute,value):
         """ Send a query that fetches all attributes from an obj to the object 
             reflection system
         """

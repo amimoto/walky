@@ -197,7 +197,7 @@ class ObjectStub(object):
         if hasattr(self,k):
             object.__setattr__(self,k,v)
         else:
-            return self._walky_connection().object_set_request(self.reg_obj_id,k,v)
+            return self._walky_connection().object_attr_set_request(self.reg_obj_id,k,v)
 
     def __dir__(self):
         return self._walky_connection().object_dir_request(self.reg_obj_id)

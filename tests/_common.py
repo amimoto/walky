@@ -29,10 +29,8 @@ class TestPort(Port):
         self.queue_recv = Queue.Queue()
         self.queue_send = Queue.Queue()
 
-    def _receiveline(self):
+    def on_receiveline(self,line=None): 
         return self.buffer_recv.pop()
-
-    def on_receiveline(self,line): pass
 
     def _sendline(self,line):
         self.buffer_send.append(line)

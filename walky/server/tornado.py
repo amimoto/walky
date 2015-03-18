@@ -2,9 +2,10 @@ from __future__ import absolute_import
 
 import os
 import logging
+import threading
+import Queue
 
 from tornado.ioloop import IOLoop
-from tornado.iostream import IOStream
 from tornado.tcpserver import TCPServer
 from tornado import websocket, web
 
@@ -21,32 +22,36 @@ class TornadoWebsockServer(websocket.WebSocketHandler):
 
 class TornadoSocketServerPort(Port):
     def init(self,stream,address,*args,**kwargs):
-        print "CONNECTED:", address
         self.stream = stream
         self.address = address
+
         self.read_next()
         self.stream.set_close_callback(self.on_close)
+
+        self.socket_open = True
+        self.send_queue = Queue.Queue()
+
+    def send_queued(self):
+        line = ''
+        while not self.send_queue.empty():
+            line += self.send_queue.get()
+        if line: 
+            self.stream.write(line.encode('utf8'))
 
     def read_next(self):
         self.stream.read_until('\n', self.on_receiveline)
 
     def on_receiveline(self, line):
-        print "RECEIVED LINE:", line
-        line = line.decode('utf8').strip()
         super(TornadoSocketServerPort,self).on_receiveline(line)
-
-    def on_send_complete(self):
-        _logger.debug('wrote a line to %s', self.address)
-        if self.stream.closed(): return
-        if self.stream.reading(): return
         self.read_next()
 
     def _sendline(self,line):
-        self.stream.write(line,self.on_send_complete)
+        self.send_queue.put(line)
+        IOLoop.instance().add_callback(self.send_queued)
 
     def on_close(self):
+        self.socket_open = False
         _logger.debug('client quit %s', self.address)
-
 
 class TornadoSocketServer(TCPServer):
     def __init__(self,server,*args,**kwargs):
@@ -54,7 +59,6 @@ class TornadoSocketServer(TCPServer):
         super(TornadoSocketServer,self).__init__(*args,**kwargs)
 
     def handle_stream(self, stream, address):
-        print "INCOMING!",address
         port = self.server.engine.port_new(
                                       TornadoSocketServerPort,
                                       stream, address
@@ -115,11 +119,11 @@ class TornadoServer(object):
         try:
             IOLoop.instance().start()
         except KeyboardInterrupt:
-            IOLoop.instance().stop()
-            self.engine.shutdown()
+            self.shutdown()
 
     def shutdown(self):
         self.engine.shutdown()
+        IOLoop.instance().stop()
 
 
 

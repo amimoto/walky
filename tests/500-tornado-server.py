@@ -11,12 +11,11 @@ class MyEngine(Engine):
     def connection_new(self,connection_class=Connection,*args,**kwargs):
         sys_reg = Registry()
         tc = TestClass()
-        sys_reg.put(tc,'@')
         conn = super(MyEngine,self).connection_new(
                                       connection_class=Connection,
-                                      sys_reg=sys_reg,
                                       *args,
                                       **kwargs)
+        conn.sys().put(tc,'@')
         return conn
 
     def reset(self):
@@ -34,8 +33,10 @@ class Test(unittest.TestCase):
 
         # Start the server
         server_pool = threading.Thread(target=lambda *a: server.run())  
+        server_pool.daemon = False
         server_pool.start()
 
+        """
         # Allow server to start up
         time.sleep(0.1)
 
@@ -46,15 +47,16 @@ class Test(unittest.TestCase):
         # Start the client
         client.connect('localhost')
 
-        print  "ABOUT TO SEND:"
         obj = client.object_get('@')
-        print "SENT and waiting"
+        with self.assertRaises(Exception) as cm:
+            obj.foo
 
-        print obj.foo
-        print "RECEIVED"
+        self.assertEqual(obj.b,'foo')
+        """
 
-        time.sleep(1)
+        time.sleep(10)
 
+        # client.close()
         server.shutdown()
 
 

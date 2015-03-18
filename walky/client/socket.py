@@ -44,7 +44,6 @@ class ClientSocketPort(asyncore.dispatcher):
         self.buffer_receive = en[-1]
         connection = self.connection()
         for line in map(lambda a:a+"\n", en[:-1]):
-            print "RECEIVED = ", line
             connection.on_readline(line)
 
     def writable(self):
@@ -55,7 +54,6 @@ class ClientSocketPort(asyncore.dispatcher):
         sent = self.send(line)
 
     def sendline(self,line):
-        print "CLIENT SEND:", line
         self.queue_send.append(line+"\r\n")
 
 
@@ -76,6 +74,9 @@ class SocketClient(Client):
 
     def run(self):
         asyncore.loop()
+
+    def close(self):
+        self.port.close()
 
     def connect(self,host=None,port=None,*args,**kwargs):
         super(SocketClient,self).connect()

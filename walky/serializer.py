@@ -11,6 +11,10 @@ class NormalizedData(object):
     def struct_normalize(self,serializer,connection):
         return self.data
 
+class ObjectMethod(NormalizedData):
+    def struct_normalize(self,serializer,connection):
+        return [PAYLOAD_ATTRIBUTE_METHOD]
+
 class SystemNormalized(NormalizedData):
     payload_type = PAYLOAD_SYSTEM
 

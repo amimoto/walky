@@ -13,7 +13,7 @@ class Test(unittest.TestCase):
 
         l_recv = u"TEST123"
         p.buffer_recv.append(l_recv)
-        l = p.receiveline()
+        l = p.on_receiveline()
         self.assertEqual(l,l_recv)
 
         l_send = u"TEST456"

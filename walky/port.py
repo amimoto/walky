@@ -50,23 +50,10 @@ class Port(object):
               return True
         return self._active
 
-    def receiveline(self):
-        """ Override to receive a line over the wire. The end
-            result should be to invoke on_receiveline.
-        """ 
-        line = self._receiveline().decode("utf8").strip()
-        self.on_receiveline(line)
-        return line
-
-    def _receiveline(self):
-        """ This may be easier to override than the actual
-            receiveline function. 
-        """
-        return ""
-
     def on_receiveline(self,line):
         """ Invoked when a string is received.
         """
+        line = line.decode("utf8").strip()
         self.connection().on_readline(line)
 
     def sendline(self,line):

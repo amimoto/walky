@@ -10,6 +10,7 @@ from walky.router import *
 from walky.serializer import *
 from walky.port import *
 from walky.messenger import *
+from walky.objects.system import *
 
 from _common import *
 
@@ -55,6 +56,8 @@ class Engine(object):
                 )
         return port
 
+    def registry_system_new(self,reg_class=Registry,*args,**kwargs):
+        return reg_class(*args,**kwargs)
 
     def connection_new(self,
                         connection_class=Connection,
@@ -73,12 +76,16 @@ class Engine(object):
                         *args,
                         engine=self,
                         user=user,
-                        sys=sys_reg or Registry(),
+                        sys=sys_reg or self.registry_system_new(),
                         sess=sess_reg or Registry(),
                         conn=conn_reg or Registry(),
                         messenger=messenger,
                         **kwargs
                     )
+
+        # Add some system objects
+        interrogation = Interrogation(connection)
+        connection.sys().put(interrogation,'?')
 
         # Register the newly minted connection!
         self.connections[connection_id] = connection

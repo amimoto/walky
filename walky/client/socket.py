@@ -80,7 +80,7 @@ class SocketClient(Client):
         super(SocketClient,self).close()
 
     def connect(self,host=None,port=None,*args,**kwargs):
-        super(SocketClient,self).connect()
+        super(SocketClient,self).connect(*args,**kwargs)
         data_dir = self.settings['data_path']
         port = self.settings['port_class'](
                     host or self.settings['socket_host'],
@@ -95,7 +95,6 @@ class SocketClient(Client):
         self.port = port
         self.connection.port(port)
 
-        # FIXME: Still need to do shutdown procedures
         self.ioloop = threading.Thread(
                             target=lambda *a: self.run(),
                         )

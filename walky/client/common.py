@@ -34,11 +34,11 @@ class Client(object):
         if self.engine: self.engine.shutdown()
         self.engine = self.settings['engine_class']()
 
-    def connect(self):
+    def connect(self,*args,**kwargs):
         """ Start the engine and the asyncore
         """
         self.engine.start()
-        self.connection = self.engine.connection_new()
+        self.connection = self.engine.connection_new(*args,**kwargs)
 
     def run(self):
         pass

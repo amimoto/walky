@@ -69,8 +69,7 @@ class SocketClient(Client):
         self.settings.setdefault('socket_host',self.socket_host)
         self.settings.setdefault('socket_port',self.socket_port)
         self.settings.setdefault('data_path','walkydata')
-        self.settings.setdefault('ssl_cert_fpath','ssl.crt')
-        self.settings.setdefault('ssl_key_fpath','ssl.key')
+        self.settings.setdefault('ssl_options',{})
 
     def run(self):
         asyncore.loop()
@@ -85,11 +84,7 @@ class SocketClient(Client):
         port = self.settings['port_class'](
                     host or self.settings['socket_host'],
                     port or self.settings['socket_port'],
-                    ssl_options={
-                        'certfile': os.path.join(data_dir,self.settings['ssl_cert_fpath']),
-                        'keyfile': os.path.join(data_dir,self.settings['ssl_key_fpath']),
-                        'cert_reqs': ssl.CERT_NONE,
-                    }
+                    ssl_options=self.settings['ssl_options'],
                 )
         # FIXME: Do we need to do something special with the port?
         self.port = port

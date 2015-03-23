@@ -12,8 +12,6 @@ from walky.port import *
 from walky.messenger import *
 from walky.objects.system import *
 
-from _common import *
-
 class Engine(object):
 
     connections = {}

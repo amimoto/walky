@@ -78,9 +78,8 @@ class TornadoServer(object):
     def __init__(self,**settings):
         settings.setdefault('websock_port',self.websock_port)
         settings.setdefault('socket_port',self.socket_port)
+        settings.setdefault('ssl_options',None)
         settings.setdefault('data_path','walkydata')
-        settings.setdefault('ssl_cert_fpath','ssl.crt')
-        settings.setdefault('ssl_key_fpath','ssl.key')
         settings.setdefault('wsgi_fallback_handler',None)
 
         settings.setdefault('socket_server_class',self.socket_server_class)
@@ -105,15 +104,15 @@ class TornadoServer(object):
         if settings['wsgi_fallback_handler']:
             web_routes.append((r'.*',settings['wsgi_fallback_handler']))
 
-        ssl_options = {
-            "certfile": os.path.join(data_dir, settings['ssl_cert_fpath']),
-            "keyfile": os.path.join(data_dir, settings['ssl_key_fpath']),
-        }
-
         self.websock_server = web.Application(web_routes)
-        self.websock_server.listen(settings['websock_port'],ssl_options=ssl_options)
+        self.websock_server.listen(
+                                      settings['websock_port'],
+                                      ssl_options=settings['ssl_options']
+                                  )
 
-        self.socket_server = settings['socket_server_class'](self,ssl_options=ssl_options)
+        self.socket_server = settings['socket_server_class'](
+                                      self,ssl_options=settings['ssl_options']
+                                  )
         self.socket_server.listen(settings['socket_port'])
 
         try:

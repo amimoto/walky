@@ -27,11 +27,12 @@ class ClientSocketPort(asyncore.dispatcher):
         return self._connection and self._connection()
 
     def handle_connect(self):
-        self._socket = self.socket
-        self.socket = ssl.wrap_socket(
-                                self.socket, 
-                                **(self.ssl_options)
-                            )
+        if self.ssl_options:
+            self._socket = self.socket
+            self.socket = ssl.wrap_socket(
+                                    self.socket, 
+                                    **(self.ssl_options)
+                                )
 
     def handle_close(self):
         self.close()
@@ -40,7 +41,7 @@ class ClientSocketPort(asyncore.dispatcher):
         data = self.recv(8192)
         self.buffer_receive += data
         if not data.find('\n'): return
-        en = data.split('\n')
+        en = self.buffer_receive.split('\n')
         self.buffer_receive = en[-1]
         connection = self.connection()
         for line in map(lambda a:a+"\n", en[:-1]):

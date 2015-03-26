@@ -2,6 +2,7 @@ import json
 
 from constants import *
 from walky.registry import *
+from walky.objects import *
 from utils import *
 
 class NormalizedData(object):
@@ -10,10 +11,6 @@ class NormalizedData(object):
 
     def struct_normalize(self,serializer,connection):
         return self.data
-
-class ObjectMethod(NormalizedData):
-    def struct_normalize(self,serializer,connection):
-        return [PAYLOAD_ATTRIBUTE_METHOD]
 
 class SystemNormalized(NormalizedData):
     payload_type = PAYLOAD_SYSTEM
@@ -51,6 +48,12 @@ class SystemMessage(SystemNormalized):
             serializer.struct_normalize(self.data,connection),
         ]
         return data
+
+class ObjectMethod(SystemMessage):
+    payload_type = PAYLOAD_ATTRIBUTE_METHOD 
+
+    def __init__(self,reg_obj_id,method):
+        self.data = [reg_obj_id,method]
 
 class SystemEvent(SystemMessage):
     payload_type = PAYLOAD_EVENT
@@ -212,14 +215,19 @@ class Serializer(object):
 
         # Now, to handle the denormalization of most of the strutures...
         if payload_type == PAYLOAD_DISTRIBUTED_OBJECT:
-            return self.object_get(payload,connection)
+            # FIXME: need th reg_obj_id to identify local vs remote
+            try:
+                return self.object_get(payload,connection)
+            except:
+                return ObjectStub(connection,payload)
 
         # Is this a function to an object?
         if payload_type == PAYLOAD_ATTRIBUTE_METHOD:
             def object_function(*args,**kwargs):
+                params = self.struct_denormalize(payload,connection)
                 return connection.object_exec_request(
-                            payload[1],
-                            payload[2],
+                            params[0],
+                            params[1],
                             *args,
                             **kwargs
                         )                        

@@ -4,6 +4,8 @@ import unittest
 from walky.objects import *
 from walky.client import *
 
+from _common import *
+
 class DummyConnection(Connection):
     def sendline(self,line):
         pass

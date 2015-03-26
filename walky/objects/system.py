@@ -37,7 +37,7 @@ class Interrogation(WeakrefObjectWrapper):
         obj = self.connection().object_get(reg_obj_id)
         attr = getattr(obj,attribute)
         if is_function(attr):
-            return ObjectMethod
+            return ObjectMethod(reg_obj_id,attribute)
         return attr
 
     def object_attr_set_request(self,reg_obj_id,attribute,value):

@@ -67,10 +67,10 @@ class Test(unittest.TestCase):
         self.assertEqual(sent_line,'[0, "?", "?", [1, ["123", "beep"]], [1, {}], 11]\r\n')
 
         # Respond with a message that the object is a function
-        c._next_id = 12
-        c.on_readline(u'[9,[1,"{}","beep"],11]\r\n'.format(obj.reg_obj_id))
+        c.on_readline(u'[9,[1,["{}","beep"]],11]\r\n'.format(obj.reg_obj_id))
 
         # This should cause a response to request a function to be executed
+        c._next_id = 12
         sent_line = port.queue_send.get(True,1)
         self.assertEqual(sent_line,'[0, "123", "beep", 12]\r\n')
 

@@ -3,6 +3,7 @@ import asyncore
 import socket
 import ssl
 import os
+import signal
 
 from walky.client.common import *
 
@@ -27,8 +28,8 @@ class ClientSocketPort(asyncore.dispatcher):
         return self._connection and self._connection()
 
     def handle_connect(self):
+        self._socket = self.socket
         if self.ssl_options:
-            self._socket = self.socket
             self.socket = ssl.wrap_socket(
                                     self.socket, 
                                     **(self.ssl_options)
@@ -50,12 +51,8 @@ class ClientSocketPort(asyncore.dispatcher):
     def writable(self):
         return self.queue_send
 
-    def handle_write(self):
-        line = self.queue_send.pop()
-        sent = self.send(line)
-
     def sendline(self,line):
-        self.queue_send.append(line+"\r\n")
+        self.send(line+u"\r\n")
 
 
 class SocketClient(Client):
@@ -90,6 +87,9 @@ class SocketClient(Client):
         # FIXME: Do we need to do something special with the port?
         self.port = port
         self.connection.port(port)
+
+        signal.signal(signal.SIGINT, self.close)
+        signal.signal(signal.SIGTERM, self.close)
 
         self.ioloop = threading.Thread(
                             target=lambda *a: self.run(),

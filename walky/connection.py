@@ -1,4 +1,5 @@
 import weakref
+import datetime
 
 from walky.worker import *
 from walky.registry import *
@@ -9,7 +10,8 @@ class ConnectionWorkerRequest(WorkerRequest):
     _request = None
     message_id = None
 
-    def __init__(self,connection,request,message_id):
+    def __init__(self,start_time,connection,request,message_id):
+        self.start_time = start_time
         self.connection(connection)
         self.request(request)
         self.message_id = message_id
@@ -98,6 +100,8 @@ class Connection(object):
         """
         engine = self.engine()
         try:
+            start = datetime.datetime.now()
+
             ( packet, message_id ) = engine.serializer.loads(line,self)
             self.messenger().put(packet,message_id)
 
@@ -105,7 +109,7 @@ class Connection(object):
             # the execution pool for handling: We don't want to lock up
             # the processing of incoming messages.
             if isinstance(packet,Request):
-                exec_request = ConnectionWorkerRequest(self,packet,message_id)
+                exec_request = ConnectionWorkerRequest(start,self,packet,message_id)
                 engine.crew.put(exec_request)
         except Exception as ex:
             result_line = self.engine().serializer.dumps(

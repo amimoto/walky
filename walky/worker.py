@@ -1,5 +1,9 @@
 import threading
 import Queue
+import datetime
+
+class ShutdownRequest(object):
+    pass
 
 class WorkerRequest(object):
 
@@ -39,15 +43,14 @@ class WorkerThread(threading.Thread):
 
     def run(self):
         while self._active:
-            try:
-                job = self._queue.get(True,self._poll_timeout)
-                if job:
-                    job.execute()
-            except Queue.Empty:
-                pass
+            job = self._queue.get()
+            if isinstance(job,ShutdownRequest):
+                return
+            job.execute()
 
     def shutdown(self):
         self._active = False
+        self._queue.put(ShutdownRequest())
 
 class WorkerCrew(object):
     """ Async execution pool. Jobs requested are queued and

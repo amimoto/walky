@@ -204,7 +204,6 @@ class Serializer(object):
                 args = self.struct_denormalize(normalized_struct[REQUEST_ARGS],connection)
             if len(normalized_struct)>(REQUEST_KWARGS+1):
                 kwargs = self.struct_denormalize(normalized_struct[REQUEST_KWARGS],connection)
-
             return Request(reg_obj_id,method,*args,**kwargs)
 
         if payload_type == PAYLOAD_EVENT:
@@ -217,7 +216,8 @@ class Serializer(object):
         if payload_type == PAYLOAD_DISTRIBUTED_OBJECT:
             # FIXME: need th reg_obj_id to identify local vs remote
             try:
-                return self.object_get(payload,connection)
+                return self.object_get(payload,connection) \
+                        or ObjectStub(connection,payload)
             except:
                 return ObjectStub(connection,payload)
 

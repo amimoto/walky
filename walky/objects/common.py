@@ -96,6 +96,10 @@ class ObjectWrapper(ACLMixin):
         return self._obj
 
     @object_method_prevent_rpc
+    def _is_norpc(self,obj_attr):
+        return hasattr(obj_attr,'_norpc')
+
+    @object_method_prevent_rpc
     def _getattr_(self,k):
         """ Determine if an attribute may be called
             or invoked.
@@ -103,7 +107,7 @@ class ObjectWrapper(ACLMixin):
 
         # Then validate based upon the attributes
         obj_attr = getattr(self._getobj_(),k)
-        if hasattr(obj_attr,'_norpc'):
+        if self._is_norpc(obj_attr):
             raise InvalidObjectMethod(k)
 
         if not self._acl_allows(self.connection().user(),k,MODE_READ):

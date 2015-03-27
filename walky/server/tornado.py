@@ -100,6 +100,7 @@ class TornadoServer(object):
 
         self.engine.start()
 
+        """
         web_routes = [(r'/websocket', settings['websocket_server_class'])]
         if settings['wsgi_fallback_handler']:
             web_routes.append((r'.*',settings['wsgi_fallback_handler']))
@@ -109,6 +110,7 @@ class TornadoServer(object):
                                       settings['websock_port'],
                                       ssl_options=settings['ssl_options']
                                   )
+        """
 
         self.socket_server = settings['socket_server_class'](
                                       self,ssl_options=settings['ssl_options']

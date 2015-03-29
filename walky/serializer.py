@@ -106,17 +106,9 @@ class Serializer(object):
 
     def object_put(self,obj,connection):
         """ Replace the object with a lookup reference
+            Use the "conn" registry
         """
-        # Is it already registered? If so, just return the reference
-        reg_obj_id = connection.object_registered(obj)
-        if reg_obj_id: return reg_obj_id
-
-        # If it hasn't been already registered, let's route it into
-        # the proper wrapper then register it
-        router = connection.engine().router
-        wrapped = router.map(obj,connection)
-
-        return connection.conn().put(wrapped)
+        return connection.object_put(obj,registry=connection.conn())
 
     def object_get(self,reg_obj_id,connection):
         """ Fetch the object based upon the lookup reference

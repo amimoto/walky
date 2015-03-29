@@ -65,8 +65,8 @@ class Controller(object):
         """ Takes a port_id as well as a service_id and
             connects the two of them together
         """
-        if port_id not in self._ports: raise InvalidPortID()
-        if service_id not in self._services: raise InvalidPortID()
+        if port_id not in self._ports: raise InvalidPortID("Invalid Port")
+        if service_id not in self._services: raise InvalidPortID("Invalid Port")
 
         port = self._ports[port_id]
         service = self._services[service_id]

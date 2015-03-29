@@ -45,7 +45,7 @@ class Router(object):
             elif isinstance(obj,src):
                 return wrapper(obj,connection,*args,**kwargs)
 
-        raise InvalidObject()
+        raise InvalidObject("Invalid Object")
 
 
 

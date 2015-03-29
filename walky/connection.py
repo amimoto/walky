@@ -141,6 +141,28 @@ class Connection(object):
     # by reg_obj_id is LOCAL
     ##################################################
 
+    def object_put(self,obj,reg_obj_id=None,registry=None):
+        """ Attempt to store an object to a registry
+            If no registry is chosen, the default registry is
+            the connection level registry
+        """
+        # Is it already registered (and under the alias if requested)? 
+        # If so, just return the reference
+        reg_obj_id_old = self.object_registered(obj)
+        if reg_obj_id_old and reg_obj_id_old == reg_obj_id: 
+            return reg_obj_id
+
+        # Setup the default registry if required
+        if not registry: registry = self.conn()
+
+        # If it hasn't been already registered, let's route it into
+        # the proper wrapper then register it
+        router = self.engine().router
+        wrapped = router.map(obj,self)
+
+        reg_obj_id = registry.put(wrapped,reg_obj_id)
+        return reg_obj_id
+
     def object_get(self,reg_obj_id):
         """ Attempt to retreive the object via search through the 
             object registry.

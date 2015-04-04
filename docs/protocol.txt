@@ -20,13 +20,13 @@ in the payload.
 >= 10: System related
 
 Object Method Invocation: 0
-> [ 0, ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
+> [ 0, ObjectID:HexString, Function:String, args:List, kwargs:Object, MessageID:String ]
 > Request an object method to be executed
 > ObjectID: string identifying the object holding the function to execute
 > Function: string name of the function to call
-> MessageID: a string value that uniquely identifies the request. Useful for async libraries.
 > args: (optional) array of normalized positional values to pass to the class method
 > kwargs: (optional) dict of normalized values to pass to the class method
+> MessageID: a string value that uniquely identifies the request. Useful for async libraries.
 
 Primitive: 1
 > Payload can be used directly without any additional processing
@@ -37,9 +37,7 @@ Contains Distributed Object: 2
 Distributed Object: 3
 > Payload IS a distributed object, further processing required
 > Expanded, the structure would look like:
-> [2,ObjectID:Integer]
-> There is an optional payload that can be provided for metadata
-> [2,ObjectID:Integer,Payload:Object]
+> [3, ObjectID:Integer, ObjectAttributeHash:String, MessageID:String]
 
 Object Deleted: 8
 > Returned as confirmation that an object has been freed

@@ -206,6 +206,9 @@ class Connection(object):
     # by reg_obj_id is REMOTE
     ##################################################
 
+    def object_get_remote(self,reg_obj_id,object_class=ObjectStub):
+        return object_class(self,reg_obj_id)
+
     def object_exec_request(self,reg_obj_id,method,*args,**kwargs):
         """ Dispatch a method execution request, then await
             a response.

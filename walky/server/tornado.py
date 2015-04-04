@@ -25,6 +25,7 @@ class TornadoWebsocketPort(Port):
         while not self.send_queue.empty():
             line += self.send_queue.get()
         if line: 
+            _logger.debug(u'sent %s', line)
             self._handler().write_message(line.encode('utf8'))
 
     def _sendline(self,line):
@@ -55,6 +56,7 @@ class TornadoWebsockHandler(websocket.WebSocketHandler):
 
     def on_close(self):
         # FIXME
+        _logger.debug(u'Client Disconnect')
         if self in cl:
             cl.remove(self)
 
@@ -69,6 +71,8 @@ class TornadoSocketServerPort(Port):
         self.stream = stream
         self.address = address
 
+        _logger.debug(u'Client Connect from: %s', address)
+
         self.read_next()
         self.stream.set_close_callback(self.on_close)
 
@@ -80,6 +84,7 @@ class TornadoSocketServerPort(Port):
         while not self.send_queue.empty():
             line += self.send_queue.get()
         if line: 
+            _logger.debug(u'sent %s', line)
             self.stream.write(line.encode('utf8'))
 
     def read_next(self):

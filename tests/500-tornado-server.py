@@ -29,12 +29,7 @@ class Test(unittest.TestCase):
 
         # Make the server...
         data_dir = 'walkydata'
-        ssl_options = {
-            "certfile": os.path.join(data_dir, 'ssl.crt'),
-            "keyfile": os.path.join(data_dir, 'ssl.key'),
-            "cert_reqs": ssl.CERT_NONE,
-        }
-        server = TornadoServer(engine_class=MyEngine,ssl_options=ssl_options)
+        server = TornadoServer(engine_class=MyEngine)
         self.assertIsInstance(server,TornadoServer)
 
         # Start the server
@@ -46,7 +41,7 @@ class Test(unittest.TestCase):
         time.sleep(0.2)
 
         # Make the client
-        client = SocketClient(ssl_options=ssl_options)
+        client = SocketClient()
         self.assertIsInstance(client,Client)
 
         # Start the client

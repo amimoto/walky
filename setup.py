@@ -8,5 +8,10 @@ setup(name='walky',
       author_email='amimoto+walky@gmail.com',
       license='MIT',
       packages=['walky'],
+      install_requires=[
+          'tzlocal',
+          'tornado',
+          'python-dateutil',
+      ],
       zip_safe=False)
 

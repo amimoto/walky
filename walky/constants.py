@@ -1,5 +1,6 @@
 import types
 import httplib
+import datetime
 
 ##############################
 # Protocol
@@ -20,9 +21,7 @@ PAYLOAD = 1
 PAYLOAD_ERROR = -1
 
 PAYLOAD_METHOD_EXECUTE = 0
-PAYLOAD_PRIMITIVE = 1
-PAYLOAD_CONTAINS_DISTRIBUTED = 2
-PAYLOAD_DISTRIBUTED_OBJECT = 3
+PAYLOAD_DATA = 1
 PAYLOAD_OBJECT_DELETED = 8
 PAYLOAD_ATTRIBUTE_METHOD = 9
 
@@ -50,6 +49,16 @@ MAPPED_CLASS = 2
 ##############################
 # Normalization
 ##############################
+STRING_TYPES = (
+              types.StringType,
+              types.UnicodeType,
+            )
+DATETIME_TYPES = (
+                datetime.datetime,
+            )
+DATE_TYPES = (
+                datetime.date,
+            )
 PRIMITIVE_TYPES = (
               types.StringType,
               types.UnicodeType,

@@ -6,7 +6,7 @@ Each line should be an array.
 
 The basic structure of the array would look something like this.
 
-[ PayloadType:Integer, Payload:Object, MessageID:String, ...Arguments:Optional ]
+[ PayloadType:Integer, Payload:Primitive, MessageID:String, ...Arguments:Optional ]
 
 This will be applied both to queries and responses.
 
@@ -20,7 +20,7 @@ in the payload.
 >= 10: System related
 
 Object Method Invocation: 0
-> [ 0, ObjectID:HexString, Function:String, args:List, kwargs:Object, MessageID:String ]
+> [ 0, ObjectID:HexString, Function:String, args:List, kwargs:Dict, MessageID:String ]
 > Request an object method to be executed
 > ObjectID: string identifying the object holding the function to execute
 > Function: string name of the function to call
@@ -28,16 +28,11 @@ Object Method Invocation: 0
 > kwargs: (optional) dict of normalized values to pass to the class method
 > MessageID: a string value that uniquely identifies the request. Useful for async libraries.
 
-Primitive: 1
-> Payload can be used directly without any additional processing
-
-Contains Distributed Object: 2
-> Payload CONTAINS distributed objects, further processing required
-
-Distributed Object: 3
-> Payload IS a distributed object, further processing required
-> Expanded, the structure would look like:
-> [3, ObjectID:Integer, ObjectAttributeHash:String, MessageID:String]
+Response: 1
+> [ 0, Payload:Structure, MessageID:String ]
+> Is a response from a request
+> Payload is any data structure that the remote code returns. The only magic will be found in strings.
+> Look at the Payload format details below.
 
 Object Deleted: 8
 > Returned as confirmation that an object has been freed
@@ -60,138 +55,67 @@ Error: -1
 Error: -XXX
 > System can also use HTTP error status codes (excepting the 200/300 series)
 
-Note that the structure can be nested.
-
-For instance, take the example of a list of objects. Expanded
-
-[
-  2,
-  [
-    [3,'1234'],
-    [3,'1235']
-  ]
-]
-
-And for a dict:
-
-[
-  2,
-  {
-    'key1': [3,'1234'],
-    'key2': [3,'1235']
-  }
-]
-
 MessageID:String is just a unique string representation for the string. 
 
 This makes it much easier for async requests to receive the response associated with them.
 
-If MessageIDs are not being used, the value is not present.
+== Payload:Primitive ==
 
-=== Request Messages ===
+The payload can be of any of the following basic types:
 
-[ 0, ObjectID:HexString, Function:String, MessageID:String, args:List, kwargs:Object ]
+* Dict
+** { 'b': 'c' }
 
-ObjectID: string identifying the object holding the function to execute
-Function: string name of the function to call
-MessageID: a string value that uniquely identifies the request. Useful for async libraries.
-args: (optional) array of normalized positional values to pass to the class method
-kwargs: (optional) dict of normalized values to pass to the class method
+* List
+** [ 1,23,4,"hi" ]
 
-Note that args and kwargs may contain distributed objects. The the arguments must be encoded the same as payload format used for responses.
+* Numeric
+** 123
 
-=== Special Objects ===
+* String
+** "hello"
 
-There are a few objects that are always present.
+* Boolean
+** true
 
-They have been given special ObjectIDs that are easily recognizable.
+* None
+** null
 
-They are:
+The only magic happens with strings. For any structure that contains
+a string, additional processing will be required 
 
-"?": Inspection
+== String Encoding ==
 
-==== Interrogation Object ====
+JSON doesn't support things such as datetimes and python objects out of the box.
 
-This is a core object. It's purpose is to yield metadata associated with
-registered objects in the system.
+To do so, some additional encoding has to be done. For Walky, the character "!" 
+at the begining of the string tells the parser to look closer.
 
-[ 0, "?", "dir", [ 0, "ObjectID:HexString" ], MessageID:String ]
+The character following the "!" determines how the parser should treat the string.
+If the subsequent string is another "!", so "!!etc", the system will simply
+strip the first "!" and return the string.
 
-Returns a list of all the attributes of the object.
+If the second character is different, then data is converted into another type.
 
-MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
+* Date
+** "!d" + "YYYY-MM-DD"
 
-This effectively is like calling 'dir'.
+* DateTime
+** The datetime format should be in ISO 8601 format with offset
+** Eg: 2015-04-03T21:19:11+00:00
+** "!D" + "2015-04-03T21:19:11+00:00"
 
-The server's response should be:
+* Remote Object reference (AKA. Reference to remote's object):
+** "!o" + reg_obj_id + "=" + json.dumps({metadata})
+** When an object on the REMOTE is being REFERRED TO
+** The metadata is optional, should be prefixed with = and be a dict
 
-[ 1, [ attr1, ..., attrn ], MessageID:String(if any) ]
+* Local Object reference (AKA. Reference to local's object):
+** "!O" + reg_obj_id + "=" + json.dumps({metadata})
+** When an object reference is being SENT to the remote
+** The metadata is optional, should be prefixed with = and be a dict
 
-[ "?", "ObjectID:HexString.Attribute:String" ]
-
-We're requesting information on the attribute.
-
-If the attribute is data structure, the system will return a standard response.
-
-If the attribute is an object method, then the system will return a message code like:
-
-[ 9 ]
-
-==== Attribute Setting Object ====
-
-This is a core object. It's purpose is to set attributes associated with 
-regisered objects in the system.
-
-[ 0, "?", "=", [ "ObjectID:HexString", "Attribute:String", PayLoad:Object ],  MessageID:String ]
-
-This will set the object's attribute to a particular value.
-
-MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
-
-This can potentially be a dangerous ability so it's controlled by a set of permissions.
-
-==== Deletion Object ====
-
-Also a core object. This lives as a way to help the garbage collector know when
-an object no longer must be stored in memory.
-
-[ 0, "?", "del", 'ObjectID:HexString', MessageID:String ]
-
-Removes the object from the reference, effectively "free" the resource.
-
-MessageID: (optional) a string value that uniquely identifies the request. Useful for async libraries.
-
-You will not be able to use this record again.
-
-The server's response should be:
-
-[ 8, MessageID:String(if any) ]
-
-==== State Management ====
-
-Networks are not necessarily stable, anything from a temporary hiccup to hitting refresh during a websock connection can cause disruption.
-
-To allow the reconnection from a broken state, a method of restoring state is provided.
-
-[ 0, "@", Function:String ]
-
-===== Functions =====
-
-@.resumeable( Seconds:Integer )
-
-Request the current session to be retained for up to Seconds:Integer seconds.
-
-If successful, the server's response should be:
-
-[ 1, SessionKey:String, MessageID:String(if any) ]
-
-SessionKey is a unique identifier that allows the user to resume to a session
-
-In some cases no sessionkey may be available, such as when the user is not logged in or the port is in unrecoverable error state.
-
-@.resume( SessionKey:String )
-
-
-
-
+* Function
+** "!f" + reg_obj_id + "=" + json.dumps({metadata})
+** The metadata is optional, should be prefixed with = and be a dict
 

@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
         c._next_id = 10
         request_thread.start()
         sent_line = port.queue_send.get(True,1)
-        self.assertEqual(sent_line,'[0, "?", "?", [1, ["123", "foo"]], [1, {}], 10]\r\n')
+        self.assertEqual(sent_line,'[0, "?", "?", ["123", "foo"], {}, 10]\r\n')
 
         # Now, fake a reply
         c.on_readline(u'[1,"somedata",10]\r\n')
@@ -64,10 +64,10 @@ class Test(unittest.TestCase):
         c._next_id = 11
         request_thread.start()
         sent_line = port.queue_send.get(True,1)
-        self.assertEqual(sent_line,'[0, "?", "?", [1, ["123", "beep"]], [1, {}], 11]\r\n')
+        self.assertEqual(sent_line,'[0, "?", "?", ["123", "beep"], {}, 11]\r\n')
 
         # Respond with a message that the object is a function
-        c.on_readline(u'[9,[1,["{}","beep"]],11]\r\n'.format(obj.reg_obj_id))
+        c.on_readline(u'[9,["{}","beep"],11]\r\n'.format(obj.reg_obj_id))
 
         # This should cause a response to request a function to be executed
         c._next_id = 12

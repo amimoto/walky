@@ -42,13 +42,13 @@ class Test(unittest.TestCase):
         # Can now test the basic serialization routines
         s = Serializer()
 
-        self.assertEqual(s.dumps(['1234'],95,connection),'[1, ["1234"], 95]')
-        self.assertEqual(s.dumps({'hello': 'world'},100,connection),'[1, {"hello": "world"}, 100]')
+        self.assertEqual(s.dumps(['1234'],connection,95),'[1, ["1234"], 95]')
+        self.assertEqual(s.dumps({'hello': 'world'},connection,100),'[1, {"hello": "world"}, 100]')
         rec = {
                     'hello': 'world',
                     'key': { 'key2': 123 }
                   }
-        complex_dump = s.dumps(rec,62,connection)
+        complex_dump = s.dumps(rec,connection,62)
         self.assertEqual(complex_dump,'[1, {"hello": "world", "key": {"key2": 123}}, 62]')
         ( complex_rec, message_id )  = s.loads(complex_dump,connection)
         self.assertEqual(complex_rec,rec)
@@ -56,10 +56,9 @@ class Test(unittest.TestCase):
 
         # Now let's see it handle objects
         tc = TestClass()
-        json_obj_dump = s.dumps(tc,45,connection)
+        json_obj_dump = s.dumps(tc,connection,45)
         ( dump_result, message_id ) = s.loads(json_obj_dump,connection)
-        self.assertIsInstance(dump_result,ObjectWrapper)
-        self.assertEqual(dump_result._getobj_(),tc)
+        self.assertIsInstance(dump_result,ObjectStub)
         self.assertEqual(message_id,45)
 
         # Can it serialize object method invocation requests?
@@ -69,8 +68,8 @@ class Test(unittest.TestCase):
                       'a',
                       b='c'
                   )
-        json_req_dump = s.dumps(omi_req,54,connection)
-        self.assertEqual(json_req_dump,'[0, "object", "method", [1, ["a"]], [1, {"b": "c"}], 54]')
+        json_req_dump = s.dumps(omi_req,connection,54)
+        self.assertEqual(json_req_dump,'[0, "object", "method", ["a"], {"b": "c"}, 54]')
         ( dump_result, message_id ) = s.loads(json_req_dump,connection)
 
         self.assertIsInstance(dump_result,Request)
@@ -83,8 +82,8 @@ class Test(unittest.TestCase):
         # Can we serialize system messages?
         ## System Events
         se = SystemEvent("BOOM!")
-        json_ev_dump = s.dumps(se,55,connection)
-        self.assertEqual(json_ev_dump,'[11, [1, "BOOM!"], 55]')
+        json_ev_dump = s.dumps(se,connection,55)
+        self.assertEqual(json_ev_dump,'[11, "BOOM!", 55]')
         ( dump_result, message_id ) = s.loads(json_ev_dump,connection)
         self.assertIsInstance(dump_result,SystemEvent)
         self.assertEqual(message_id,55)
@@ -92,8 +91,8 @@ class Test(unittest.TestCase):
 
         ## Random System Messages
         se = SystemMessage("BAM!")
-        json_ev_dump = s.dumps(se,56,connection)
-        self.assertEqual(json_ev_dump,'[12, [1, "BAM!"], 56]')
+        json_ev_dump = s.dumps(se,connection,56)
+        self.assertEqual(json_ev_dump,'[12, "BAM!", 56]')
         ( dump_result, message_id ) = s.loads(json_ev_dump,connection)
         self.assertIsInstance(dump_result,SystemMessage)
         self.assertEqual(message_id,56)

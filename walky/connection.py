@@ -218,10 +218,22 @@ class Connection(object):
         line = self.engine().serializer.dumps(req,self,message_id)
         sub = self.messenger().subscribe_message_id(message_id)
         self.sendline(line)
+        print "WAITING FOR:", message_id
         msg = sub.get_single_message()
+        print "GOT:", message_id
         if isinstance(msg,Exception):
             raise msg
         return msg
+
+    def object_exec_request_nowait(self,reg_obj_id,method,*args,**kwargs):
+        """ Dispatch a method execution request, then await
+            a response.
+        """
+        req = Request(reg_obj_id,method,*args,**kwargs)
+        message_id = self.message_id_next()
+        line = self.engine().serializer.dumps(req,self,message_id)
+        sub = self.messenger().subscribe_message_id(message_id)
+        self.sendline(line)
 
     def object_attr_request(self,reg_obj_id,attribute):
         """ Send an attribute query request to the object reflection system
@@ -258,7 +270,7 @@ class Connection(object):
     def object_del_request(self,reg_obj_id):
         """ Send a query that deletes an obj from the registries
         """
-        return self.object_exec_request(
+        return self.object_exec_request_nowait(
                     SYS_INTERROGATION_OBJ_ID,
                     SYS_INTERROGATION_DEL_METHOD,
                     reg_obj_id

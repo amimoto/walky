@@ -206,6 +206,7 @@ class ObjectStub(object):
     def __dir__(self):
         return self._walky_connection().object_dir_request(self.reg_obj_id)
 
-
+    def __del__(self):
+        return self._walky_connection().object_del_request(self.reg_obj_id)
 
 

@@ -218,9 +218,7 @@ class Connection(object):
         line = self.engine().serializer.dumps(req,self,message_id)
         sub = self.messenger().subscribe_message_id(message_id)
         self.sendline(line)
-        print "WAITING FOR:", message_id
         msg = sub.get_single_message()
-        print "GOT:", message_id
         if isinstance(msg,Exception):
             raise msg
         return msg

@@ -25,8 +25,12 @@ class TornadoWebsocketPort(Port):
         while not self.send_queue.empty():
             line += self.send_queue.get()
         if line: 
-            _logger.debug(u'sent %s', line)
-            self._handler().write_message(line.encode('utf8'))
+            _logger.debug(u'sent %s', repr(line))
+            try:
+                self._handler().write_message(line.encode('utf8'))
+            except websocket.WebSocketClosedError:
+                _logger.debug(u"could not send '%s' as port was closed.", repr(line))
+                pass
 
     def _sendline(self,line):
         self.send_queue.put(line)
@@ -63,7 +67,7 @@ class TornadoWebsockHandler(websocket.WebSocketHandler):
     def on_message(self,message):
         """ FIXME: Assumes on_message is a readline
         """
-        _logger.debug(u'received %s', message)
+        _logger.debug(u'received %s', repr(message))
         self._port.on_receiveline(message)
 
 class TornadoSocketServerPort(Port):
@@ -84,7 +88,7 @@ class TornadoSocketServerPort(Port):
         while not self.send_queue.empty():
             line += self.send_queue.get()
         if line: 
-            _logger.debug(u'sent %s', line)
+            _logger.debug(u'sent %s', repr(line))
             self.stream.write(line.encode('utf8'))
 
     def read_next(self):

@@ -21,6 +21,9 @@ class Engine(object):
 
     anon_user = None
 
+    reap_last = None
+    reap_interval = 1
+
     def __init__(self,*args,**kwargs):
         self.reset()
         self.init(*args,**kwargs)
@@ -30,6 +33,7 @@ class Engine(object):
         self.crew = WorkerCrew()
         self.router = Router()
         self.serializer = Serializer()
+        self.last_reap = time.time()
 
         user = User(['anonymous'])
         user.lock()
@@ -57,6 +61,21 @@ class Engine(object):
     def registry_system_new(self,reg_class=Registry,*args,**kwargs):
         return reg_class(*args,**kwargs)
 
+    def connection_reaper(self):
+        """ Go through and reap the expired children
+        """
+        connections = dict(self.connections)
+        for connection_id,connection in connections.iteritems():
+            if connection.stale():
+                self.connection_del(connection_id)
+
+    def connection_del(self, connection_id):
+        """ Remove the connection from the pool
+        """
+        if connection_id in self.connections:
+            self.connections[connection_id].close()
+            del self.connections[connection_id]
+
     def connection_new(self,
                         connection_class=Connection,
                         sys_reg=None,
@@ -66,6 +85,10 @@ class Engine(object):
                         **kwargs):
         """ Creates a new connection by instantiating a new connection
         """
+        if self.reap_last <= time.time() + self.reap_interval:
+            self.connection_reaper()
+            self.reap_last = time.time()
+
         connection_id = self.id_generate()
         user = self.anon_user
         messenger = Messenger()
@@ -89,6 +112,11 @@ class Engine(object):
         self.connections[connection_id] = connection
 
         return connection
+
+    def connection_close(self,connection_id):
+        """ Force close a connection.
+        """
+        # TODO
 
     def id_generate(self):
         """ Returns a cryptographically secure 64 bit unique key in 

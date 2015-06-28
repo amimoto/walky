@@ -1,5 +1,5 @@
 import weakref
-import datetime
+import time
 
 from walky.worker import *
 from walky.registry import *
@@ -50,6 +50,11 @@ class Connection(object):
     _queue = None
     _message_id_last = None
     _messenger = None
+
+    _last_time = None
+    _release_time = None
+    _retention_lifetime = 0
+
     id = None
 
     ##################################################
@@ -68,6 +73,16 @@ class Connection(object):
 
     def reset(self):
         self._message_id_last = 0
+        self._last_time = None
+        self._release_time = None
+
+    def stale(self):
+        """ Returns true if this connection is considered stale and 
+            requires reaping
+        """
+        if not self._release_time:
+            return False
+        return self._release_time <= time.time()  
 
     def port(self,port=None):
         """ Magic function that loads the port and updates the port to
@@ -98,6 +113,9 @@ class Connection(object):
     def on_readline(self,line):
         """ Do an action when we receive an input
         """
+
+        self._last_time = time.time()
+        self._release_time = None
         engine = self.engine()
         try:
             start = datetime.datetime.now()
@@ -122,7 +140,31 @@ class Connection(object):
     def sendline(self,line):
         """ Sends another packet to the remote
         """
+        self._last_time = time.time()
+        self._release_time = None
         self.port().sendline(line)
+
+    def release(self):
+        """ Release the resources associated with
+            this connection
+        """
+        reg_list = [self.sess(),self.conn()]
+        for reg in reg_list:
+            reg.reset()
+
+    def close(self):
+        """ When the connection to Walky has been closed we need to
+            let the engine know. 
+        """
+        self.release()
+
+    def disconnected(self):
+        """ Called when the connection has been disconnected. 
+            We setup the system to reap the connection later if
+            we want to keep it around for a bit. If no retention
+            lifetime has been set, reap immediately
+        """
+        self._release_time = time.time() + ( self._retention_lifetime or 0 )
 
     def _get_set_attribute(self,k,v=None):
         if not v is None:
@@ -275,5 +317,6 @@ class Connection(object):
                 )
 
 
-
+    def __del__(self):
+        print "DESTROY CALLED", self.id
 

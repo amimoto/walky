@@ -7,6 +7,7 @@ import Queue
 
 from tornado import websocket, web
 from tornado.ioloop import IOLoop
+from tornado.iostream import StreamClosedError
 from tornado.tcpserver import TCPServer
 from tornado.web import FallbackHandler
 from walky.engine import *
@@ -92,7 +93,10 @@ class TornadoSocketServerPort(Port):
             self.stream.write(line.encode('utf8'))
 
     def read_next(self):
-        self.stream.read_until('\n', self.on_receiveline)
+        try:
+            self.stream.read_until('\n', self.on_receiveline)
+        except StreamClosedError:
+            pass
 
     def on_receiveline(self, line):
         super(TornadoSocketServerPort,self).on_receiveline(line)
@@ -104,6 +108,7 @@ class TornadoSocketServerPort(Port):
 
     def on_close(self):
         self.socket_open = False
+        self.connection().disconnected()
         _logger.debug('client quit %s', self.address)
 
 class TornadoSocketServer(TCPServer):
@@ -116,7 +121,7 @@ class TornadoSocketServer(TCPServer):
                                       TornadoSocketServerPort,
                                       stream, address
                                   )
-        conn = self.server.engine.connection_new(port=port)
+        self.server.engine.connection_new(port=port)
 
 class TornadoServer(object):
     engine = None

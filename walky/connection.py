@@ -317,6 +317,3 @@ class Connection(object):
                 )
 
 
-    def __del__(self):
-        print "DESTROY CALLED", self.id
-
